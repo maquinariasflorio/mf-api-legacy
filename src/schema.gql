@@ -1,0 +1,45 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Query {
+  getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
+}
+
+union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
+
+type Ok {
+  message: String
+}
+
+type UserNotFound {
+  message: String!
+}
+
+type InactiveUser {
+  rut: String!
+}
+
+input RecoverCodeInput {
+  rut: String!
+}
+
+type Mutation {
+  changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
+}
+
+union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
+
+type TokenNotFound {
+  message: String!
+}
+
+type WrongChangePasswordCode {
+  message: String!
+}
+
+input NewPasswordInput {
+  rut: String!
+  password: String!
+  code: String!
+}
