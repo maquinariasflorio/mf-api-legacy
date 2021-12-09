@@ -73,10 +73,14 @@ import { UserModule } from './modules/user/user.module'
                 port       : Number(process.env.SMTP_PORT),
                 ignoreTLS  : false,
                 requireTLS : true,
-                secure     : true,
+                secure     : false,
                 auth       : {
                     user : process.env.SMTP_USER,
                     pass : process.env.SMTP_USER_PASS,
+                },
+
+                tls: {
+                    ciphers: 'SSLv3',
                 },
             },
 

@@ -110,6 +110,7 @@ export class AuthService {
             from    : `"No Reply" <${process.env.SMTP_USER}>`,
             subject : 'Maquinarias Florio - Código de autorización para cambio de contraseña',
             text    : `Código de autorización para cambio de contraseña: ${token.code}`,
+            html    : `<p>Código de autorización para cambio de contraseña: ${token.code}</p>`,
         } )
             .then( () => {
 
@@ -164,8 +165,9 @@ export class AuthService {
         return await this.mailerService.sendMail( {
             to      : user.email.toLowerCase(),
             from    : `"No Reply" <${process.env.SMTP_USER}>`,
-            subject : 'Maquinarias Florio - Cambio de contraseña exitoso',
-            text    : `Contraseña actualizada exitosamente!`,
+            subject : 'Maquinarias Florio - Cambio de contraseña',
+            text    : '¡Cuidado! Su contraseña fue actualizada. Si usted no hizo esta operación, comuníquese de inmediato con su administrador.',
+            html    : `<p>¡Cuidado! Su contraseña fue actualizada. Si usted no hizo esta operación, comuníquese de inmediato con su administrador.</p>`,
         } )
             .then( () => {
 

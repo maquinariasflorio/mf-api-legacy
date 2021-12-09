@@ -10,6 +10,9 @@ export class NewPasswordInput {
     password: string;
 
     @Field()
+    confirmPassword: string;
+
+    @Field()
     code: string;
 
 }

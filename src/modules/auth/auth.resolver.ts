@@ -14,7 +14,7 @@ export class AuthResolver {
     @Public()
     @Query( () => RecoverCodeResultUnion)
     async getRecoverCode(@Args('form') form: RecoverCodeInput) {
-
+        
         return await this.authService.generateChangePasswordAuthCode(form)
     
     }

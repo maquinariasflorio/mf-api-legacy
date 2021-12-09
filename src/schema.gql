@@ -41,5 +41,6 @@ type WrongChangePasswordCode {
 input NewPasswordInput {
   rut: String!
   password: String!
+  confirmPassword: String!
   code: String!
 }
