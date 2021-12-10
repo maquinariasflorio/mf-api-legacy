@@ -14,6 +14,9 @@ import { NewPasswordInput } from './inputs/newPassword.input'
 import { TokenNotFound } from '../token/results/tokenNotFound.result'
 import { UserNotFound } from '../user/results/userNotFound.result'
 import { WrongChangePasswordCode } from './results/wrongChangePassCode.result'
+import { RoleService } from '../role/role.service'
+import { RoleNotFound } from '../role/results/roleNotFound.result'
+import { ViewService } from '../view/view.service'
 
 @Injectable()
 export class AuthService {
@@ -22,6 +25,8 @@ export class AuthService {
         private readonly mailerService: MailerService,
         private readonly userService: UserService,
         private readonly tokenService: TokenService,
+        private readonly roleService: RoleService,
+        private readonly viewService: ViewService,
     ) {}
 
     async login( { rut, password } ) {
@@ -184,7 +189,53 @@ export class AuthService {
         const user = await this.userService.findOneUser( { _id: new ObjectId(id) } )
         delete user.password
 
-        return user
+        const role = await this.roleService.findOneRole( { _id: user.role._id } )
+
+        if (!role) {
+            
+            return new RoleNotFound( {
+                message: 'Role not found',
+            } )
+        
+        }
+
+        const views = await this.viewService.find()
+
+        return {
+            ...user,
+            role,
+            views: this.getAllowedViews(views, role.allowedViews),
+        }
+    
+    }
+
+    getAllowedViews(views, allowedViews) {
+
+        const allowed = []
+
+        views.forEach(view => {
+
+            if (allowedViews.find(allowedView => allowedView.name === view.name) ) {
+
+                if (view.children) {
+
+                    allowed.push( {
+                        ...view,
+                        children: this.getAllowedViews(view.children, allowedViews),
+                    } )
+                
+                }
+                else {
+
+                    allowed.push(view)
+                
+                }
+            
+            }
+        
+        } )
+
+        return allowed
     
     }
 

@@ -13,6 +13,8 @@ import { JwtAuthGuard } from './modules/auth/jwt_auth.guard'
 import { AuthModule } from './modules/auth/auth.module'
 import { TokenModule } from './modules/token/token.module'
 import { UserModule } from './modules/user/user.module'
+import { RoleModule } from './modules/role/role.module'
+import { ViewModule } from './modules/view/view.module'
 
 @Module( {
     imports: [
@@ -101,6 +103,8 @@ import { UserModule } from './modules/user/user.module'
         AuthModule,
         TokenModule,
         UserModule,
+        RoleModule,
+        ViewModule,
     ],
 
     controllers : [],

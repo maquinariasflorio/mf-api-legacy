@@ -8,6 +8,8 @@ import { JwtStrategy } from './jwt.strategy'
 import { TokenEntity } from './../token/token.entity'
 import { UserModule } from '../user/user.module'
 import { TokenModule } from '../token/token.module'
+import { RoleModule } from '../role/role.module'
+import { ViewModule } from '../view/view.module'
 
 @Module( {
     imports: [
@@ -16,6 +18,8 @@ import { TokenModule } from '../token/token.module'
         
         UserModule,
         TokenModule,
+        RoleModule,
+        ViewModule,
     ],
 
     providers   : [ AuthService, JwtStrategy, AuthResolver ],
