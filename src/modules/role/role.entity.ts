@@ -2,31 +2,26 @@ import { Entity, Column, ObjectIdColumn } from 'typeorm'
 import { ObjectId } from 'mongodb'
 
 @Entity( {
-    name: 'user',
+    name: 'role',
 } )
-export class UserEntity {
+export class RoleEntity {
 
     @ObjectIdColumn()
     _id: ObjectId;
 
     @Column()
-    rut: string;
-
-    @Column()
-    email: string;
-
-    @Column()
     name: string;
 
     @Column()
-    password: string;
+    label: string;
 
     @Column()
-    isActive: boolean;
+    allowedViews: Array<{
+        name: string,
+        actions?: Array<string>
+    }>;
 
     @Column()
-    role: {
-        _id: ObjectId,
-    };
+    initialView: string;
 
 }

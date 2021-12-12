@@ -50,8 +50,6 @@ export class TokenService {
 
     async generateJwtTokens(data: { userId: ObjectId, userIsActive: boolean } ): Promise<{ access: Token; refresh: Token; }> {
 
-        await this.deleteMany( { userId: data.userId, type: TokenType.REFRESH } )
-
         const secret = this.configService.get('JWT_TOKEN_SECRET')
 
         const accessTokenExpires = moment().add(this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS'), 'hours')
