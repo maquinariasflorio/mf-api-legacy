@@ -54,10 +54,9 @@ export class CreateInitialViews1639096324857 implements MigrationInterface {
                 icon  : 'mdi-calendar-clock',
             },
             {
-                name    : 'reports',
-                label   : 'Reportes',
-                icon    : 'mdi-chart-line',
-                initial : true,
+                name  : 'reports',
+                label : 'Reportes',
+                icon  : 'mdi-chart-line',
             },
             {
                 name  : 'pay-states',

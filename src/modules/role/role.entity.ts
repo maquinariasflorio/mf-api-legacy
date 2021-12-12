@@ -21,4 +21,7 @@ export class RoleEntity {
         actions?: Array<string>
     }>;
 
+    @Column()
+    initialView: string;
+
 }

@@ -16,6 +16,8 @@ export class PopulateRolesWithAllowedViews1639099305459 implements MigrationInte
                     { name: 'reports', actions: [ 'insert', 'update', 'delete', 'view' ] },
                     { name: 'pay_states', actions: [ 'insert', 'update', 'delete', 'view' ] },
                 ],
+
+                initialView: 'reports',
             },
         } )
 
@@ -26,6 +28,8 @@ export class PopulateRolesWithAllowedViews1639099305459 implements MigrationInte
                     { name: 'machinery' },
                     { name: 'machinery-job-registry' },
                 ],
+
+                initialView: 'operator-next-job',
             },
         } )
 
@@ -35,6 +39,8 @@ export class PopulateRolesWithAllowedViews1639099305459 implements MigrationInte
                     { name: 'machinery' },
                     { name: 'machinery-fuel-registry' },
                 ],
+
+                initialView: 'machinery-fuel-registry',
             },
         } )
 
@@ -44,6 +50,8 @@ export class PopulateRolesWithAllowedViews1639099305459 implements MigrationInte
                     { name: 'machinery' },
                     { name: 'machinery-maintenance' },
                 ],
+
+                initialView: 'machinery-maintenance',
             },
         } )
 
@@ -62,7 +70,8 @@ export class PopulateRolesWithAllowedViews1639099305459 implements MigrationInte
 
             await queryRunner.updateOne('role', { name: role }, {
                 $unset: {
-                    allowedViews: [],
+                    allowedViews : [],
+                    initialView  : '',
                 },
             } )
         
