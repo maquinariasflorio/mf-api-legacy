@@ -24,11 +24,11 @@ import { ViewModule } from './modules/view/view.module'
         ConfigModule.forRoot( {
             validationSchema: Joi.object( {
                 PORT                                           : Joi.number(),
-                DB_HOST                                        : Joi.string().required(),
-                DB_PORT                                        : Joi.number().required(),
-                DB_DATABASE                                    : Joi.string().required(),
-                DB_USERNAME                                    : Joi.string().required(),
-                DB_PASSWORD                                    : Joi.string().required(),
+                DB_HOST                                        : Joi.string(),
+                DB_PORT                                        : Joi.number(),
+                DB_DATABASE                                    : Joi.string(),
+                DB_USERNAME                                    : Joi.string(),
+                DB_PASSWORD                                    : Joi.string(),
                 JWT_TOKEN_SECRET                               : Joi.string().required(),
                 JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS      : Joi.number().required(),
                 JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS     : Joi.number().required(),
@@ -37,7 +37,6 @@ import { ViewModule } from './modules/view/view.module'
                 SMTP_USER_PASS                                 : Joi.string().required(),
                 SMTP_HOST                                      : Joi.string().required(),
                 SMTP_PORT                                      : Joi.number().required(),
-                APP_URL                                        : Joi.string().required(),
             } ),
 
             isGlobal: true,
