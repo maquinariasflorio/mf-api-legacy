@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { ViewEntity } from './view.entity'
+import { MongooseModule } from '@nestjs/mongoose'
+import { View, ViewSchema } from './view.schema'
 import { ViewService } from './view.service'
 
 @Module( {
     imports: [
-        TypeOrmModule.forFeature( [ ViewEntity ] ),
+        MongooseModule.forFeature( [{ name: View.name, schema: ViewSchema }] ),
     ],
 
     providers : [ ViewService ],

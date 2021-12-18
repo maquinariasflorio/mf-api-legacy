@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+require('dotenv').config()
 import * as Joi from 'joi'
 import { join } from 'path'
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 import { GraphQLModule } from '@nestjs/graphql'
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { MongooseModule } from '@nestjs/mongoose'
+import { MONGO_URI, MONGO_OPTIONS } from '../mongo.config'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 
@@ -44,30 +47,12 @@ import { ViewModule } from './modules/view/view.module'
             autoSchemaFile : join(process.cwd(), 'src/schema.gql'),
             context        : ( { req } ) => ( { req } ),
             playground     : process.env.NODE_ENV !== 'production',
+            subscriptions  : {
+                'graphql-ws': true,
+            },
         } ),
 
-        TypeOrmModule.forRoot( {
-            type     : 'mongodb',
-            host     : process.env.DB_HOST,
-            port     : parseInt(process.env.DB_PORT),
-            database : process.env.DB_DATABASE,
-            username : process.env.DB_USERNAME,
-            password : process.env.DB_PASSWORD,
-            entities : [
-                join(__dirname, './**/*.entity{.ts,.js}'),
-            ],
-        
-            migrations: [
-                join(__dirname, './../migrations/*{.ts,.js}'),
-            ],
-        
-            migrationsRun      : true,
-            synchronize        : process.env.NODE_ENV !== 'production',
-            useNewUrlParser    : true,
-            logging            : true,
-            useUnifiedTopology : true,
-            authSource         : 'admin',
-        } ),
+        MongooseModule.forRoot(MONGO_URI, MONGO_OPTIONS),
 
         MailerModule.forRoot( {
             transport: {

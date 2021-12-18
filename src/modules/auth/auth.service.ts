@@ -83,12 +83,6 @@ export class AuthService {
     
     }
 
-    async logout(userId: string) {
-
-        await this.tokenService.deleteMany( { userId: new ObjectId(userId), type: TokenType.REFRESH } )
-    
-    }
-
     async generateChangePasswordAuthCode(form: RecoverCodeInput) {
 
         const user = await this.userService.findOneUser( { rut: form.rut } )
@@ -186,9 +180,7 @@ export class AuthService {
 
     async getUser(id: string) {
 
-        const user = await this.userService.findOneUser( { _id: new ObjectId(id) } )
-        delete user.password
-
+        const user = await this.userService.findOneUser( { _id: new ObjectId(id) }, { password: false } )
         const role = await this.roleService.findOneRole( { _id: user.role._id } )
 
         if (!role) {
@@ -199,7 +191,7 @@ export class AuthService {
         
         }
 
-        const views = await this.viewService.find()
+        const views = await this.viewService.findView()
 
         return {
             ...user,
@@ -213,7 +205,7 @@ export class AuthService {
 
         const allowed = []
 
-        views.forEach(view => {
+        views.forEach( (view) => {
 
             if (allowedViews.find(allowedView => allowedView.name === view.name) ) {
 

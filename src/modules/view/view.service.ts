@@ -1,32 +1,26 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { MongoRepository } from 'typeorm'
-import { ViewEntity } from './view.entity'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+import { View, ViewDocument } from './view.schema'
 
 @Injectable()
 export class ViewService {
 
     constructor(
-        @InjectRepository(ViewEntity)
-        private viewsRepository: MongoRepository<ViewEntity>,
+        @InjectModel(View.name)
+        private viewModel: Model<ViewDocument>,
     ) {}
 
-    async findView(conditions: Partial<ViewEntity>) {
+    async findView(conditions?: Record<string, unknown>) {
 
-        return await this.viewsRepository.find(conditions)
+        return await this.viewModel.find(conditions).lean()
     
     }
     
-    async findOneView(conditions: Partial<ViewEntity>) {
+    async findOneView(conditions: Record<string, unknown>) {
 
-        return await this.viewsRepository.findOne(conditions)
+        return await this.viewModel.findOne(conditions).lean()
     
-    }
-
-    async find() {
-            
-        return await this.viewsRepository.find()
-        
     }
 
 }
