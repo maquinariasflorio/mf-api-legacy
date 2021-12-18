@@ -31,6 +31,7 @@ export class TokenService {
     
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     generateToken(type: TokenType, data: { userId: ObjectId, userIsActive: boolean }, secret: string, expires: moment.Moment): string {
 
         const payload = {
