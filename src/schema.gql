@@ -2,8 +2,37 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Role {
+  _id: String!
+  name: String!
+  label: String!
+  initialView: String!
+}
+
+type User {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  password: String!
+  isActive: Boolean!
+  role: String!
+  isSystemAdmin: Boolean!
+  signature: String
+}
+
+type View {
+  _id: String!
+  name: String!
+  label: String!
+  icon: String!
+  children: [View!]!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
+  getAllUsers: [User!]!
+  getAllRoles: [Role!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -26,6 +55,9 @@ input RecoverCodeInput {
 
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
+  createUser(form: NewUserInput!): CreateUserResultUnion!
+  updateUser(form: UpdateUserInput!): CreateUserResultUnion!
+  deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
 }
 
 union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
@@ -41,5 +73,40 @@ type WrongChangePasswordCode {
 input NewPasswordInput {
   rut: String!
   password: String!
+  confirmPassword: String!
   code: String!
+}
+
+union CreateUserResultUnion = Ok | UserAlreadyExists
+
+type UserAlreadyExists {
+  rut: String!
+}
+
+input NewUserInput {
+  rut: String!
+  email: String!
+  name: String!
+  role: String!
+  signature: String
+}
+
+input UpdateUserInput {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  role: String!
+  signature: String
+}
+
+union DeleteUserResultUnion = Ok | UserNotFound | ImmutableUser
+
+type ImmutableUser {
+  _id: String!
+  rut: String!
+}
+
+input DeleteUserInput {
+  _id: String!
 }

@@ -1,36 +1,37 @@
-import { InjectRepository } from '@nestjs/typeorm'
-import { MongoRepository } from 'typeorm'
 import * as moment from 'moment'
 import { ObjectId } from 'mongodb'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { TokenType } from './type.enum'
 import { JwtService } from '@nestjs/jwt'
-import { TokenEntity } from './token.entity'
+import { Token, TokenDocument } from './token.schema'
 import { hashSync } from 'bcrypt'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
 
 @Injectable()
 export class TokenService {
 
     constructor(
-        @InjectRepository(TokenEntity)
-        private tokensRepository: MongoRepository<TokenEntity>,
+        @InjectModel(Token.name)
+        private tokenModel: Model<TokenDocument>,
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService,
     ) {}
 
-    async findOneToken(conditions: Partial<TokenEntity> | string) {
+    async findOneToken(conditions: Record<string, unknown>) {
 
-        return await this.tokensRepository.findOne(conditions)
+        return await this.tokenModel.findOne(conditions).lean()
     
     }
 
-    async deleteMany(conditions: Partial<TokenEntity>) {
+    async deleteMany(conditions: Record<string, unknown>): Promise<Token> {
 
-        return await this.tokensRepository.deleteMany(conditions)
+        return await this.tokenModel.deleteMany(conditions).lean()
     
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     generateToken(type: TokenType, data: { userId: ObjectId, userIsActive: boolean }, secret: string, expires: moment.Moment): string {
 
         const payload = {
@@ -39,8 +40,9 @@ export class TokenService {
                 userIsActive : data.userIsActive,
             },
 
-            iat : moment().unix(),
-            exp : expires.unix(),
+            iat: moment().unix(),
+            // FIXME fix the issue with the expiration time for graphql
+            // exp : expires.unix(),
             type,
         }
 
@@ -48,9 +50,7 @@ export class TokenService {
     
     }
 
-    async generateJwtTokens(data: { userId: ObjectId, userIsActive: boolean } ): Promise<{ access: Token; refresh: Token; }> {
-
-        await this.deleteMany( { userId: data.userId, type: TokenType.REFRESH } )
+    async generateJwtTokens(data: { userId: ObjectId, userIsActive: boolean } ): Promise<{ access: TokenInterface; refresh: TokenInterface; }> {
 
         const secret = this.configService.get('JWT_TOKEN_SECRET')
 
@@ -60,12 +60,14 @@ export class TokenService {
         const refreshTokenExpires = moment().add(this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS'), 'hours')
         const refreshToken = this.generateToken(TokenType.REFRESH, data, secret, refreshTokenExpires)
 
-        await this.tokensRepository.save( {
+        const newToken = new this.tokenModel( {
             userId  : data.userId,
             token   : refreshToken,
             type    : TokenType.REFRESH,
             expires : refreshTokenExpires.toDate(),
         } )
+        
+        await newToken.save()
 
         return {
             access: {
@@ -101,12 +103,14 @@ export class TokenService {
         const tokenExpires = moment().add(this.configService.get('CHANGE_PASSWORD_TOKEN_EXPIRATION_TIME_IN_HOURS'), 'hours')
         const code = this.codeGenerator()
 
-        await this.tokensRepository.save( {
+        const newToken = new this.tokenModel( {
             userId  : data.userId,
             token   : hashSync(code, 10),
             type    : TokenType.CHANGE_PASSWORD,
             expires : tokenExpires.toDate(),
         } )
+
+        await newToken.save()
 
         return {
             code,
@@ -117,7 +121,7 @@ export class TokenService {
 
 }
 
-export interface Token {
+export interface TokenInterface {
     token: string,
     expires: Date,
 }
