@@ -1,25 +1,25 @@
+import { Model } from 'mongoose'
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { MongoRepository } from 'typeorm'
-import { RoleEntity } from './role.entity'
+import { InjectModel } from '@nestjs/mongoose'
+import { Role, RoleDocument } from './role.schema'
 
 @Injectable()
 export class RoleService {
 
     constructor(
-        @InjectRepository(RoleEntity)
-        private rolesRepository: MongoRepository<RoleEntity>,
+        @InjectModel(Role.name)
+        private roleModel: Model<RoleDocument>
     ) {}
 
-    async findRole(conditions: Partial<RoleEntity>) {
+    async findRole(conditions?: Partial<Role>) {
 
-        return await this.rolesRepository.find(conditions)
+        return await this.roleModel.find(conditions).lean()
     
     }
     
-    async findOneRole(conditions: Partial<RoleEntity>) {
+    async findOneRole(conditions: Partial<Role>) {
 
-        return await this.rolesRepository.findOne(conditions)
+        return await this.roleModel.findOne(conditions).lean()
     
     }
 
