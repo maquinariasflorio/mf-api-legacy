@@ -17,8 +17,8 @@ import { AuthModule } from './modules/auth/auth.module'
 import { TokenModule } from './modules/token/token.module'
 import { UserModule } from './modules/user/user.module'
 import { RoleModule } from './modules/role/role.module'
+import { ClientModule } from './modules/client/client.module'
 import { ViewModule } from './modules/view/view.module'
-import { ClientModule } from './modules/client/client.module';
 
 @Module( {
     imports: [
