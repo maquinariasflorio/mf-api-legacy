@@ -29,10 +29,33 @@ type View {
   children: [View!]!
 }
 
+type Loads {
+  type: String!
+  amount: Float!
+}
+
+type Billing {
+  name: String!
+  rut: String!
+  category: String!
+  address: String!
+  phone: String!
+  loads: [Loads!]!
+}
+
+type Client {
+  _id: String!
+  name: String!
+  paymentCondition: String!
+  receivers: [String!]!
+  billing: Billing!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
   getAllRoles: [Role!]!
+  getAllClients: [Client!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -55,9 +78,12 @@ input RecoverCodeInput {
 
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
-  createUser(form: NewUserInput!): CreateUserResultUnion!
+  createUser(form: UserInput!): CreateUserResultUnion!
   updateUser(form: UpdateUserInput!): CreateUserResultUnion!
   deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
+  createClient(form: ClientInput!): CreateClientResultUnion!
+  updateClient(form: UpdateClientInput!): CreateClientResultUnion!
+  deleteClient(form: DeleteClientInput!): DeleteClientResultUnion!
 }
 
 union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
@@ -83,7 +109,8 @@ type UserAlreadyExists {
   rut: String!
 }
 
-input NewUserInput {
+input UserInput {
+  _id: String
   rut: String!
   email: String!
   name: String!
@@ -108,5 +135,52 @@ type ImmutableUser {
 }
 
 input DeleteUserInput {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  role: String!
+  signature: String
+}
+
+union CreateClientResultUnion = Ok
+
+input ClientInput {
+  _id: String
+  name: String!
+  paymentCondition: String!
+  receivers: [String!]!
+  billing: BillingInput!
+}
+
+input BillingInput {
+  name: String!
+  rut: String!
+  category: String!
+  address: String!
+  phone: String!
+  loads: [LoadsInput!]!
+}
+
+input LoadsInput {
+  type: String!
+  amount: Float!
+}
+
+input UpdateClientInput {
+  _id: String!
+  name: String!
+  paymentCondition: String!
+  receivers: [String!]!
+  billing: BillingInput!
+}
+
+union DeleteClientResultUnion = Ok | ClientNotFound
+
+type ClientNotFound {
+  message: String!
+}
+
+input DeleteClientInput {
   _id: String!
 }

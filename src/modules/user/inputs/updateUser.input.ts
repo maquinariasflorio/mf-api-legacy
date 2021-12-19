@@ -1,24 +1,10 @@
 import { Field, InputType } from '@nestjs/graphql'
+import { UserInput } from './user.input'
 
 @InputType()
-export class UpdateUserInput {
+export class UpdateUserInput extends UserInput {
 
     @Field()
     _id: string;
-
-    @Field()
-    rut: string;
-
-    @Field()
-    email: string;
-
-    @Field()
-    name: string;
-
-    @Field()
-    role: string;
-
-    @Field( { nullable: true } )
-    signature?: string;
 
 }

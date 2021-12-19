@@ -1,8 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql'
-import { UserInput } from './user.input'
+import { ClientInput } from './client.input'
 
 @InputType()
-export class DeleteUserInput extends UserInput {
+export class UpdateClientInput extends ClientInput {
 
     @Field()
     _id: string;
