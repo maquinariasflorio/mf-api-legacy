@@ -1,7 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 import { DeleteUserInput } from './inputs/deleteUser.input'
-import { NewUserInput } from './inputs/newUser.input'
 import { UpdateUserInput } from './inputs/updateUser.input'
+import { UserInput } from './inputs/user.input'
 import { CreateUserResultUnion } from './outputs/createUser.output'
 import { DeleteUserResultUnion } from './outputs/deleteUser.output'
 import { User } from './user.schema'
@@ -20,7 +20,7 @@ export class UserResolver {
     }
 
     @Mutation( () => CreateUserResultUnion)
-    async createUser(@Args('form') form: NewUserInput) {
+    async createUser(@Args('form') form: UserInput) {
 
         return await this.userService.createUser(form)
     

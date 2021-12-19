@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common'
 import { ObjectId } from 'mongodb'
 import { compareSync, hashSync } from 'bcrypt'
-import { User, UserDocument } from './user.schema'
 import { InjectConnection, InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { NewUserInput } from './inputs/newUser.input'
 import { MailerService } from '@nestjs-modules/mailer'
-import { UserAlreadyExists } from './results/userAlreadyExists.result'
 import { Ok } from 'src/commons/results/ok.result'
 import * as mongoose from 'mongoose'
-import { DeleteUserInput } from './inputs/deleteUser.input'
 import { UserNotFound } from './results/userNotFound.result'
-import { ImmutableUser } from './results/immutableUser.result'
+import { DeleteUserInput } from './inputs/deleteUser.input'
 import { UpdateUserInput } from './inputs/updateUser.input'
+import { ImmutableUser } from './results/immutableUser.result'
+import { UserAlreadyExists } from './results/userAlreadyExists.result'
+import { User, UserDocument } from './user.schema'
+import { UserInput } from './inputs/user.input'
 
 @Injectable()
 export class UserService {
@@ -73,7 +73,7 @@ export class UserService {
     
     }
 
-    async createUser(user: NewUserInput) {
+    async createUser(user: UserInput) {
 
         const session = await this.connection.startSession()
         session.startTransaction()
@@ -82,6 +82,7 @@ export class UserService {
             
         const newUser = new this.userModel( {
             ...user,
+            email    : user.email.trim().toLowerCase(),
             isActive : true,
             password : hashSync(newPassword, 10),
         } )
@@ -161,6 +162,7 @@ export class UserService {
         await this.userModel.updateOne( { _id: new ObjectId(user._id) }, {
             $set: {
                 ...user,
+                email: user.email.trim().toLowerCase(),
             },
         } )
 
