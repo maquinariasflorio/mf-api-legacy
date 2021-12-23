@@ -51,11 +51,35 @@ type Client {
   billing: Billing!
 }
 
+type Machinery {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass!
+}
+
+enum AllowedMachineryType {
+  TRUCK
+  OTHER
+}
+
+enum MaintenanceMachineryClass {
+  CLASS_A
+  CLASS_B
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
   getAllRoles: [Role!]!
   getAllClients: [Client!]!
+  getAllEquipments: [Machinery!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -79,11 +103,14 @@ input RecoverCodeInput {
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
   createUser(form: UserInput!): CreateUserResultUnion!
-  updateUser(form: UpdateUserInput!): CreateUserResultUnion!
+  updateUser(form: UpdateUserInput!): UpdateUserResultUnion!
   deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
   createClient(form: ClientInput!): CreateClientResultUnion!
-  updateClient(form: UpdateClientInput!): CreateClientResultUnion!
+  updateClient(form: UpdateClientInput!): UpdateClientResultUnion!
   deleteClient(form: DeleteClientInput!): DeleteClientResultUnion!
+  createEquipment(form: EquipmentInput!): CreateEquipmentResultUnion!
+  updateEquipment(form: UpdateEquipmentInput!): UpdateEquipmentResultUnion!
+  deleteEquipment(form: DeleteEquipmentInput!): DeleteEquipmentResultUnion!
 }
 
 union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
@@ -118,6 +145,13 @@ input UserInput {
   signature: String
 }
 
+union UpdateUserResultUnion = Ok | UserNotFound | ImmutableUser
+
+type ImmutableUser {
+  _id: String!
+  rut: String!
+}
+
 input UpdateUserInput {
   _id: String!
   rut: String!
@@ -129,18 +163,8 @@ input UpdateUserInput {
 
 union DeleteUserResultUnion = Ok | UserNotFound | ImmutableUser
 
-type ImmutableUser {
-  _id: String!
-  rut: String!
-}
-
 input DeleteUserInput {
   _id: String!
-  rut: String!
-  email: String!
-  name: String!
-  role: String!
-  signature: String
 }
 
 union CreateClientResultUnion = Ok
@@ -167,6 +191,12 @@ input LoadsInput {
   amount: Float!
 }
 
+union UpdateClientResultUnion = Ok | ClientNotFound
+
+type ClientNotFound {
+  message: String!
+}
+
 input UpdateClientInput {
   _id: String!
   name: String!
@@ -177,10 +207,54 @@ input UpdateClientInput {
 
 union DeleteClientResultUnion = Ok | ClientNotFound
 
-type ClientNotFound {
+input DeleteClientInput {
+  _id: String!
+}
+
+union CreateEquipmentResultUnion = Ok | CodeAlreadyExists | PatentAlreadyExists
+
+type CodeAlreadyExists {
+  code: String!
+}
+
+type PatentAlreadyExists {
+  patent: String!
+}
+
+input EquipmentInput {
+  _id: String
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass!
+}
+
+union UpdateEquipmentResultUnion = Ok | EquipmentNotFound | CodeAlreadyExists | PatentAlreadyExists
+
+type EquipmentNotFound {
   message: String!
 }
 
-input DeleteClientInput {
+input UpdateEquipmentInput {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass!
+}
+
+union DeleteEquipmentResultUnion = Ok | EquipmentNotFound
+
+input DeleteEquipmentInput {
   _id: String!
 }

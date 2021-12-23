@@ -4,6 +4,7 @@ import { UpdateUserInput } from './inputs/updateUser.input'
 import { UserInput } from './inputs/user.input'
 import { CreateUserResultUnion } from './outputs/createUser.output'
 import { DeleteUserResultUnion } from './outputs/deleteUser.output'
+import { UpdateUserResultUnion } from './outputs/updateUser.output'
 import { User } from './user.schema'
 import { UserService } from './user.service'
 
@@ -26,7 +27,7 @@ export class UserResolver {
     
     }
 
-    @Mutation( () => CreateUserResultUnion)
+    @Mutation( () => UpdateUserResultUnion)
     async updateUser(@Args('form') form: UpdateUserInput) {
 
         return await this.userService.updateUser(form)

@@ -6,6 +6,7 @@ import { DeleteClientInput } from './inputs/deleteClient.input'
 import { UpdateClientInput } from './inputs/updateClient.input'
 import { CreateClientResultUnion } from './outputs/createClient.output'
 import { DeleteClientResultUnion } from './outputs/deleteClient.output'
+import { UpdateClientResultUnion } from './outputs/updateClient.output'
 
 @Resolver()
 export class ClientResolver {
@@ -26,7 +27,7 @@ export class ClientResolver {
     
     }
 
-    @Mutation( () => CreateClientResultUnion)
+    @Mutation( () => UpdateClientResultUnion)
     async updateClient(@Args('form') form: UpdateClientInput) {
 
         return await this.clientService.updateClient(form)

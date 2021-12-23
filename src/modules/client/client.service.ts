@@ -84,9 +84,9 @@ export class ClientService {
 
     async updateClient(client: UpdateClientInput) {
 
-        const existUser = await this.findOneClient( { _id: new ObjectId(client._id) } )
+        const existClient = await this.findOneClient( { _id: new ObjectId(client._id) } )
 
-        if (!existUser)
+        if (!existClient)
             return new ClientNotFound()
  
         await this.clientModel.updateOne( { _id: new ObjectId(client._id) }, {
