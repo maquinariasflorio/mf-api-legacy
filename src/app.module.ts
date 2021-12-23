@@ -19,7 +19,7 @@ import { UserModule } from './modules/user/user.module'
 import { RoleModule } from './modules/role/role.module'
 import { ClientModule } from './modules/client/client.module'
 import { ViewModule } from './modules/view/view.module'
-import { MachineryModule } from './modules/machinery/machinery.module';
+import { MachineryModule } from './modules/machinery/machinery.module'
 
 @Module( {
     imports: [
