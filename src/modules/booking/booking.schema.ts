@@ -2,8 +2,7 @@ import { ObjectType, Field, registerEnumType } from '@nestjs/graphql'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose'
 import { Client } from '../client/client.schema'
-import { User } from '../user/user.schema'
-import { AllowedMachineryType, Machinery } from '../machinery/machinery.schema'
+import { AllowedMachineryType } from '../machinery/machinery.schema'
 
 export enum AllowedBookingType {
     INTERNAL = 'INTERNAL',
@@ -51,9 +50,9 @@ export class Booking {
     @Prop()
     type: AllowedBookingType;
 
-    @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId || String, ref: 'User' } )
-    constructionManager: User | string;
+    @Field( () => String, { nullable: true } )
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    constructionManager?: any;
 
     @Field( () => AllowedMachineryType)
     @Prop()
@@ -64,12 +63,12 @@ export class Booking {
     client: Client;
 
     @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId || String, ref: 'Machinery' } )
-    equipment: Machinery | string;
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    equipment: any;
 
     @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId || String, ref: 'User' } )
-    operator: User | string;
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    operator: any;
 
     // MACHINERY CASE
 

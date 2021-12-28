@@ -92,7 +92,11 @@ export class BookingService {
 
         await this.bookingModel.updateOne( { _id: new ObjectId(booking._id) }, {
             $set: {
-                ...this.mapBookingByType(booking),
+                ...this.mapBookingByType(booking).$set,
+            },
+
+            $unset: {
+                ...this.mapBookingByType(booking).$unset,
             },
         } )
 
@@ -102,46 +106,54 @@ export class BookingService {
 
     private mapBookingByType(booking: BookingInput | UpdateBookingInput) {
 
-        const newBooking = {}
+        const newBooking = {
+            $set   : {},
+            $unset : {},
+        }
 
         if (booking instanceof UpdateBookingInput)
-            newBooking['_id'] = booking._id
+            newBooking.$set['_id'] = booking._id
 
         if (booking.type === AllowedBookingType.EXTERNAL) {
 
-            newBooking['constructionManager'] = booking.constructionManager
-            newBooking['equipment'] = booking.equipment
-            newBooking['operator'] = booking.operator
-            newBooking['company'] = booking.company
+            newBooking.$set['constructionManager'] = new ObjectId(booking.constructionManager)
+            newBooking.$set['equipment'] = booking.equipment
+            newBooking.$set['operator'] = booking.operator
+            newBooking.$set['company'] = booking.company
         
         }
         else if (booking.type === AllowedBookingType.INTERNAL) {
 
-            newBooking['equipment'] = new ObjectId(booking.equipment)
-            newBooking['operator'] = new ObjectId(booking.operator)
+            newBooking.$unset['constructionManager'] = ''
+            newBooking.$unset['company'] = ''
+            newBooking.$set['equipment'] = new ObjectId(booking.equipment)
+            newBooking.$set['operator'] = new ObjectId(booking.operator)
         
         }
 
         if (booking.machineryType === AllowedMachineryType.TRUCK) {
 
-            newBooking['workCondition'] = booking.workCondition
+            newBooking.$unset['minHours'] = ''
+            newBooking.$unset['amountPerHour'] = ''
+            newBooking.$set['workCondition'] = booking.workCondition
 
         }
         else if (booking.machineryType === AllowedMachineryType.OTHER) {
 
-            newBooking['minHours'] = booking.minHours
-            newBooking['amountPerHour'] = booking.amountPerHour
+            newBooking.$unset['workCondition'] = ''
+            newBooking.$set['minHours'] = booking.minHours
+            newBooking.$set['amountPerHour'] = booking.amountPerHour
 
         }
 
-        newBooking['type'] = booking.type
-        newBooking['client'] = new ObjectId(booking.client)
-        newBooking['machineryType'] = booking.machineryType
-        newBooking['building'] = booking.building
-        newBooking['startDate'] = new Date(booking.startDate)
-        newBooking['endDate'] = new Date(booking.endDate)
-        newBooking['address'] = booking.address
-        newBooking['receivers'] = booking.receivers.map(receiver => {
+        newBooking.$set['type'] = booking.type
+        newBooking.$set['client'] = new ObjectId(booking.client)
+        newBooking.$set['machineryType'] = booking.machineryType
+        newBooking.$set['building'] = booking.building
+        newBooking.$set['startDate'] = new Date(booking.startDate)
+        newBooking.$set['endDate'] = new Date(booking.endDate)
+        newBooking.$set['address'] = booking.address
+        newBooking.$set['receivers'] = booking.receivers.map(receiver => {
 
             return {
                 ...receiver,
