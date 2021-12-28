@@ -51,9 +51,9 @@ export class Booking {
     @Prop()
     type: AllowedBookingType;
 
-    @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId || String, ref: 'User' } )
-    constructionManager: User | string;
+    @Field( () => String, { nullable: true } )
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    constructionManager?: any;
 
     @Field( () => AllowedMachineryType)
     @Prop()
@@ -64,12 +64,12 @@ export class Booking {
     client: Client;
 
     @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId || String, ref: 'Machinery' } )
-    equipment: Machinery | string;
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    equipment: any;
 
     @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId || String, ref: 'User' } )
-    operator: User | string;
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    operator: any;
 
     // MACHINERY CASE
 

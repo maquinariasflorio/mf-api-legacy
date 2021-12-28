@@ -83,7 +83,7 @@ type BookingReceiver {
 type Booking {
   _id: String!
   type: AllowedBookingType!
-  constructionManager: String!
+  constructionManager: String
   machineryType: AllowedMachineryType!
   client: String!
   equipment: String!
