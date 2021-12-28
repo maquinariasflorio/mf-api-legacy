@@ -45,7 +45,7 @@ export class BookingService {
         session.startTransaction()
             
         const newBooking = new this.bookingModel( {
-            ...this.mapBookingByType(booking),
+            ...this.mapBookingByType(booking).$set,
         } )
     
         try {
