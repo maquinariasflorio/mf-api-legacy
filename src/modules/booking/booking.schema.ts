@@ -2,8 +2,7 @@ import { ObjectType, Field, registerEnumType } from '@nestjs/graphql'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose'
 import { Client } from '../client/client.schema'
-import { User } from '../user/user.schema'
-import { AllowedMachineryType, Machinery } from '../machinery/machinery.schema'
+import { AllowedMachineryType } from '../machinery/machinery.schema'
 
 export enum AllowedBookingType {
     INTERNAL = 'INTERNAL',
