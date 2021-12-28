@@ -42,7 +42,7 @@ module.exports = {
             },
             {
                 name  : 'booking',
-                label : 'Reservas',
+                label : 'Arriendos',
                 icon  : 'mdi-calendar-clock',
             },
             {

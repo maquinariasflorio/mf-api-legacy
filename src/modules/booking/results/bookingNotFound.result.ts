@@ -1,12 +1,12 @@
 import { ObjectType, Field } from '@nestjs/graphql'
 
 @ObjectType()
-export class Ok {
+export class BookingNotFound {
 
-    @Field( { nullable: true } )
-    message?: string;
+    @Field()
+    message: string;
 
-    constructor(data?: { message?: string } ) {
+    constructor(data?: { message: string } ) {
 
         this.message = data?.message
     

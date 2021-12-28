@@ -20,6 +20,7 @@ import { RoleModule } from './modules/role/role.module'
 import { ClientModule } from './modules/client/client.module'
 import { ViewModule } from './modules/view/view.module'
 import { MachineryModule } from './modules/machinery/machinery.module'
+import { BookingModule } from './modules/booking/booking.module'
 
 @Module( {
     imports: [
@@ -93,6 +94,7 @@ import { MachineryModule } from './modules/machinery/machinery.module'
         ViewModule,
         ClientModule,
         MachineryModule,
+        BookingModule,
     ],
 
     controllers : [],
