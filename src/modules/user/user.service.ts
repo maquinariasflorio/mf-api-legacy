@@ -73,6 +73,41 @@ export class UserService {
     
     }
 
+    async getAllUsersWithRoleName(roleName) : Promise<User[]> {
+            
+        return await this.userModel.aggregate( [
+            {
+                $lookup: {
+                    from         : 'role',
+                    localField   : 'role',
+                    foreignField : '_id',
+                    as           : 'role',
+                },
+            },
+            {
+                $unwind: {
+                    path                       : "$role",
+                    preserveNullAndEmptyArrays : false,
+                },
+            },
+            {
+                $match: {
+                    "isSystemAdmin": {
+                        $ne: true,
+                    },
+
+                    "role.name": roleName,
+                },
+            },
+            {
+                $project: {
+                    role: false,
+                },
+            },
+        ] )
+    
+    }
+
     async createUser(user: UserInput) {
 
         const session = await this.connection.startSession()

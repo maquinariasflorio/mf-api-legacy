@@ -3,8 +3,9 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, ObjectId } from 'mongoose'
 
 export enum AllowedMachineryType {
-    TRUCK,
-    OTHER,
+    TRUCK = 'TRUCK',
+    PICKUP = 'PICKUP',
+    OTHER = 'OTHER',
 }
 
 registerEnumType(AllowedMachineryType, {
@@ -12,8 +13,8 @@ registerEnumType(AllowedMachineryType, {
 } )
 
 export enum MaintenanceMachineryClass {
-    CLASS_A,
-    CLASS_B,
+    CLASS_A = 'CLASS_A',
+    CLASS_B = 'CLASS_B',
 }
 
 registerEnumType(MaintenanceMachineryClass, {
@@ -62,9 +63,9 @@ export class Machinery {
     @Prop()
     volume?: number;
 
-    @Field( () => MaintenanceMachineryClass)
+    @Field( () => MaintenanceMachineryClass, { nullable: true } )
     @Prop()
-    maintenanceClass: MaintenanceMachineryClass;
+    maintenanceClass?: MaintenanceMachineryClass;
 
 }
 

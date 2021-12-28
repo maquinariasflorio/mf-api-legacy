@@ -20,6 +20,13 @@ export class UserResolver {
     
     }
 
+    @Query( () => [ User ] )
+    async getAllUsersWithRoleName(@Args('role') role: string) {
+
+        return await this.userService.getAllUsersWithRoleName(role)
+    
+    }
+
     @Mutation( () => CreateUserResultUnion)
     async createUser(@Args('form') form: UserInput) {
 
