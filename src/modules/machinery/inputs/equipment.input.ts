@@ -31,7 +31,7 @@ export class EquipmentInput {
     @Field( { nullable: true } )
     volume?: number;
 
-    @Field( () => MaintenanceMachineryClass)
-    maintenanceClass: MaintenanceMachineryClass;
+    @Field( () => MaintenanceMachineryClass, { nullable: true } )
+    maintenanceClass?: MaintenanceMachineryClass;
 
 }

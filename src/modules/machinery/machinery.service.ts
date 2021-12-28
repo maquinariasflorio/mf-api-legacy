@@ -7,11 +7,8 @@ import { Ok } from 'src/commons/results/ok.result'
 import { DeleteEquipmentInput } from './inputs/deleteEquipment.input'
 import { EquipmentInput } from './inputs/equipment.input'
 import { UpdateEquipmentInput } from './inputs/updateEquipment.input'
-import { Machinery, MachineryDocument } from './machinery.schema'
+import { AllowedMachineryType, Machinery, MachineryDocument } from './machinery.schema'
 import { EquipmentNotFound } from './results/equipmentNotFound.result'
-import { session } from 'passport'
-import { async } from 'rxjs'
-import { error } from 'winston'
 import { CodeAlreadyExists } from './results/codeAlreadyExists.result'
 import { PatentAlreadyExists } from './results/patentAlreadyExists.result'
 
@@ -52,6 +49,7 @@ export class MachineryService {
             ...equipment,
             code   : equipment.code.toUpperCase(),
             patent : equipment.patent.toUpperCase(),
+            volume : equipment.type === AllowedMachineryType.TRUCK ? equipment.volume : undefined,
         } )
     
         try {
@@ -116,6 +114,7 @@ export class MachineryService {
                     ...equipment,
                     code   : equipment.code.toUpperCase(),
                     patent : equipment.patent.toUpperCase(),
+                    volume : equipment.type === AllowedMachineryType.TRUCK ? equipment.volume : undefined,
                 },
             } )
             

@@ -61,11 +61,12 @@ type Machinery {
   patent: String!
   year: Float!
   volume: Float
-  maintenanceClass: MaintenanceMachineryClass!
+  maintenanceClass: MaintenanceMachineryClass
 }
 
 enum AllowedMachineryType {
   TRUCK
+  PICKUP
   OTHER
 }
 
@@ -74,12 +75,54 @@ enum MaintenanceMachineryClass {
   CLASS_B
 }
 
+type BookingReceiver {
+  editable: Boolean!
+  email: String!
+}
+
+type Booking {
+  _id: String!
+  type: AllowedBookingType!
+  constructionManager: String!
+  machineryType: AllowedMachineryType!
+  client: String!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiver!]!
+}
+
+enum AllowedBookingType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum AllowedWorkCondition {
+  TRAVEL
+  DAY
+  BOTH
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
+  getAllUsersWithRoleName(role: String!): [User!]!
   getAllRoles: [Role!]!
   getAllClients: [Client!]!
   getAllEquipments: [Machinery!]!
+  getAllBookings: [Booking!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -111,6 +154,9 @@ type Mutation {
   createEquipment(form: EquipmentInput!): CreateEquipmentResultUnion!
   updateEquipment(form: UpdateEquipmentInput!): UpdateEquipmentResultUnion!
   deleteEquipment(form: DeleteEquipmentInput!): DeleteEquipmentResultUnion!
+  createBooking(form: BookingInput!): CreateBookingResultUnion!
+  updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
+  deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
 }
 
 union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
@@ -231,7 +277,7 @@ input EquipmentInput {
   patent: String!
   year: Float!
   volume: Float
-  maintenanceClass: MaintenanceMachineryClass!
+  maintenanceClass: MaintenanceMachineryClass
 }
 
 union UpdateEquipmentResultUnion = Ok | EquipmentNotFound | CodeAlreadyExists | PatentAlreadyExists
@@ -250,11 +296,68 @@ input UpdateEquipmentInput {
   patent: String!
   year: Float!
   volume: Float
-  maintenanceClass: MaintenanceMachineryClass!
+  maintenanceClass: MaintenanceMachineryClass
 }
 
 union DeleteEquipmentResultUnion = Ok | EquipmentNotFound
 
 input DeleteEquipmentInput {
+  _id: String!
+}
+
+union CreateBookingResultUnion = Ok
+
+input BookingInput {
+  _id: String
+  type: AllowedBookingType!
+  constructionManager: String
+  machineryType: AllowedMachineryType!
+  client: String!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiverInput!]!
+}
+
+input BookingReceiverInput {
+  editable: Boolean!
+  email: String!
+}
+
+union UpdateBookingResultUnion = Ok | BookingNotFound
+
+type BookingNotFound {
+  message: String!
+}
+
+input UpdateBookingInput {
+  _id: String!
+  type: AllowedBookingType!
+  constructionManager: String
+  machineryType: AllowedMachineryType!
+  client: String!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiverInput!]!
+}
+
+union DeleteBookingResultUnion = Ok | BookingNotFound
+
+input DeleteBookingInput {
   _id: String!
 }
