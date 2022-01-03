@@ -24,6 +24,39 @@ registerEnumType(AllowedWorkCondition, {
 } )
 
 @ObjectType()
+export class BookingMachinery {
+
+    @Field( () => AllowedMachineryType)
+    @Prop()
+    machineryType: AllowedMachineryType;
+
+    @Field( () => String)
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    equipment: any;
+
+    @Field( () => String)
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    operator: any;
+
+    // MACHINERY CASE
+
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    minHours?: number;
+
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    amountPerHour?: number;
+
+    // TRUCK CASE
+
+    @Field( () => AllowedWorkCondition, { nullable: true } )
+    @Prop()
+    workCondition?: AllowedWorkCondition;
+
+}
+
+@ObjectType()
 export class BookingReceiver {
 
     @Field( () => Boolean)
@@ -54,37 +87,13 @@ export class Booking {
     @Prop( { type: MongooseSchema.Types.Mixed } )
     constructionManager?: any;
 
-    @Field( () => AllowedMachineryType)
-    @Prop()
-    machineryType: AllowedMachineryType;
-
     @Field( () => String)
     @Prop( { type: MongooseSchema.Types.ObjectId, ref: 'Client' } )
     client: Client;
 
-    @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.Mixed } )
-    equipment: any;
-
-    @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.Mixed } )
-    operator: any;
-
-    // MACHINERY CASE
-
-    @Field( () => Number, { nullable: true } )
-    @Prop()
-    minHours?: number;
-
-    @Field( () => Number, { nullable: true } )
-    @Prop()
-    amountPerHour?: number;
-
-    // TRUCK CASE
-
-    @Field( () => AllowedWorkCondition, { nullable: true } )
-    @Prop()
-    workCondition?: AllowedWorkCondition;
+    @Field( () => [ BookingMachinery ] )
+    @Prop( [{ type: BookingMachinery }] )
+    machines: BookingMachinery[];
 
     // WORK DATA
 

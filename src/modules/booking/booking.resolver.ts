@@ -41,4 +41,18 @@ export class BookingResolver {
     
     }
 
+    @Query( () => [ Booking ] )
+    async getBuildingsByClientAndDate(@Args('client') client: string, @Args('date') date: string, @Args('equipment') equipment: string) {
+
+        return await this.bookingService.getAllBuildingsByClientAndDate(client, date, equipment)
+    
+    }
+
+    @Query( () => [ Booking ] )
+    async getUserNextJob(@Args('user') user: string, @Args('date') date: string) {
+
+        return await this.bookingService.getUserNextJob(user, date)
+    
+    }
+
 }
