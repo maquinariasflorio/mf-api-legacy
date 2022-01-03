@@ -9,7 +9,8 @@ import { BookingInput } from './input/booking.input'
 import { DeleteBookingInput } from './input/deleteBooking.input'
 import { UpdateBookingInput } from './input/updateBooking.input'
 import { BookingNotFound } from './results/bookingNotFound.result'
-import { AllowedMachineryType } from '../machinery/machinery.schema'
+import { RoleService } from '../role/role.service'
+import { UserService } from '../user/user.service'
 
 @Injectable()
 export class BookingService {
@@ -19,6 +20,8 @@ export class BookingService {
         private bookingModel: Model<BookingDocument>,
         @InjectConnection()
         private readonly connection: mongoose.Connection,
+        private readonly userService: UserService,
+        private readonly roleService: RoleService,
     ) {}
 
     async findBooking(conditions: Record<string, unknown>) {
@@ -117,42 +120,31 @@ export class BookingService {
         if (booking.type === AllowedBookingType.EXTERNAL) {
 
             newBooking.$set['constructionManager'] = new ObjectId(booking.constructionManager)
-            newBooking.$set['equipment'] = booking.equipment
-            newBooking.$set['operator'] = booking.operator
-            newBooking.$set['company'] = booking.company
+            newBooking.$set['company'] = booking.company.toUpperCase().trim()
         
         }
         else if (booking.type === AllowedBookingType.INTERNAL) {
 
             newBooking.$unset['constructionManager'] = ''
             newBooking.$unset['company'] = ''
-            newBooking.$set['equipment'] = new ObjectId(booking.equipment)
-            newBooking.$set['operator'] = new ObjectId(booking.operator)
         
-        }
-
-        if (booking.machineryType === AllowedMachineryType.TRUCK) {
-
-            newBooking.$unset['minHours'] = ''
-            newBooking.$unset['amountPerHour'] = ''
-            newBooking.$set['workCondition'] = booking.workCondition
-
-        }
-        else if (booking.machineryType === AllowedMachineryType.OTHER) {
-
-            newBooking.$unset['workCondition'] = ''
-            newBooking.$set['minHours'] = booking.minHours
-            newBooking.$set['amountPerHour'] = booking.amountPerHour
-
         }
 
         newBooking.$set['type'] = booking.type
         newBooking.$set['client'] = new ObjectId(booking.client)
-        newBooking.$set['machineryType'] = booking.machineryType
-        newBooking.$set['building'] = booking.building
+        newBooking.$set['building'] = booking.building.toUpperCase().trim()
         newBooking.$set['startDate'] = new Date(booking.startDate)
         newBooking.$set['endDate'] = new Date(booking.endDate)
-        newBooking.$set['address'] = booking.address
+        newBooking.$set['address'] = booking.address.toUpperCase().trim()
+        newBooking.$set['machines'] = booking.machines.map(machinery => {
+
+            return {
+                ...machinery,
+                equipment : booking.type === AllowedBookingType.INTERNAL ? new ObjectId(machinery.equipment) : machinery.equipment.toUpperCase().trim(),
+                operator  : booking.type === AllowedBookingType.INTERNAL ? new ObjectId(machinery.operator) : machinery.operator.toUpperCase().trim(),
+            }
+        
+        } )
         newBooking.$set['receivers'] = booking.receivers.map(receiver => {
 
             return {
@@ -163,6 +155,73 @@ export class BookingService {
         } )
     
         return newBooking
+    
+    }
+
+    async getAllBuildingsByClientAndDate(client: string, date: string, equipment: string) {
+
+        return await this.findBooking( {
+            client    : new ObjectId(client),
+            startDate : { $lte: new Date(date) },
+            endDate   : { $gte: new Date(date) },
+            machines  : {
+                $elemMatch: {
+                    equipment: mongoose.Types.ObjectId.isValid(equipment) ? new ObjectId(equipment) : equipment,
+                },
+            },
+        } )
+    
+    }
+
+    async getAllBookingsByUserAndDate(user: string, date: string, role: string) {
+
+        const condition = {
+            startDate : { $lte: new Date(date) },
+            endDate   : { $gte: new Date(date) },
+            machines  : {
+                $elemMatch: {
+                    operator: new ObjectId(user),
+                },
+            },
+
+            constructionManager: new ObjectId(user),
+        }
+
+        if (role === 'operator')
+            delete condition.constructionManager
+        else if (role === 'construction_manager')
+            delete condition.machines
+        
+
+        return await this.findBooking(condition)
+        
+    }
+
+    async getUserNextJob(userId: string, date: string) {
+
+        const user = await this.userService.findOneUser( { _id: new ObjectId(userId) } )
+        const role = await this.roleService.findOneRole( { _id: user.role._id } )
+
+        const bookings = await this.getAllBookingsByUserAndDate(userId, date, role.name)
+
+        if (role.name === 'operator') {
+
+            return bookings.map(b => {
+                
+                return {
+                    ...b,
+                    machines: b.machines.filter(m => m.operator.toString() === userId),
+                }
+                
+            } )
+        
+        }
+        else if (role.name === 'construction_manager') {
+
+            return bookings
+        
+        }
+        
     
     }
 

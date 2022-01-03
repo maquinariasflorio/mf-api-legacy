@@ -45,6 +45,17 @@ export class ClientService {
             
         const newClient = new this.clientModel( {
             ...client,
+            name             : client.name.toUpperCase().trim(),
+            paymentCondition : client.paymentCondition.toUpperCase().trim(),
+            billing          : {
+                ...client.billing,
+                name     : client.billing.name.toUpperCase().trim(),
+                category : client.billing.category.toUpperCase().trim(),
+                address  : client.billing.address.toUpperCase().trim(),
+                loads    : client.billing.loads.map(load => ( { ...load, type: load.type.toUpperCase().trim() } ) ),
+            },
+
+            receivers: client.receivers.map(receiver => receiver.toLowerCase() ),
         } )
     
         try {
@@ -92,12 +103,28 @@ export class ClientService {
         await this.clientModel.updateOne( { _id: new ObjectId(client._id) }, {
             $set: {
                 ...client,
+                name             : client.name.toUpperCase().trim(),
+                paymentCondition : client.paymentCondition.toUpperCase().trim(),
+                billing          : {
+                    ...client.billing,
+                    name     : client.billing.name.toUpperCase().trim(),
+                    category : client.billing.category.toUpperCase().trim(),
+                    address  : client.billing.address.toUpperCase().trim(),
+                    loads    : client.billing.loads.map(load => ( { ...load, type: load.type.toUpperCase().trim() } ) ),
+                },
+
                 receivers: client.receivers.map(receiver => receiver.toLowerCase() ),
             },
         } )
 
         return new Ok( { message: 'Client updated successfully' } )
     
+    }
+
+    async getClient(client: string) {
+            
+        return await this.findOneClient( { _id: new ObjectId(client) } )
+        
     }
 
 }

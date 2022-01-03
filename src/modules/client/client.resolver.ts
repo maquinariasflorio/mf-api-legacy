@@ -41,4 +41,11 @@ export class ClientResolver {
     
     }
 
+    @Query( () => Client)
+    async getClient(@Args('client') client: string) {
+
+        return await this.clientService.getClient(client)
+    
+    }
+
 }

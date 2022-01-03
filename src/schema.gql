@@ -75,6 +75,21 @@ enum MaintenanceMachineryClass {
   CLASS_B
 }
 
+type BookingMachinery {
+  machineryType: AllowedMachineryType!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
+enum AllowedWorkCondition {
+  TRAVEL
+  DAY
+  BOTH
+}
+
 type BookingReceiver {
   editable: Boolean!
   email: String!
@@ -84,13 +99,8 @@ type Booking {
   _id: String!
   type: AllowedBookingType!
   constructionManager: String
-  machineryType: AllowedMachineryType!
   client: String!
-  equipment: String!
-  operator: String!
-  minHours: Float
-  amountPerHour: Float
-  workCondition: AllowedWorkCondition
+  machines: [BookingMachinery!]!
   company: String
   building: String!
   startDate: DateTime!
@@ -104,16 +114,31 @@ enum AllowedBookingType {
   EXTERNAL
 }
 
-enum AllowedWorkCondition {
-  TRAVEL
-  DAY
-  BOTH
-}
-
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+type EquipmentForInternalBookings {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+  workCondition: String
+}
+
+type EquipmentForExternalBookings {
+  _id: String!
+  type: String!
+  minHours: Float!
+  workCondition: String
+}
 
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
@@ -121,8 +146,12 @@ type Query {
   getAllUsersWithRoleName(role: String!): [User!]!
   getAllRoles: [Role!]!
   getAllClients: [Client!]!
+  getClient(client: String!): Client!
   getAllEquipments: [Machinery!]!
+  getAllEquipmentsByBuilding(date: String!, user: String!): EquipmentsByBookingResultUnion!
   getAllBookings: [Booking!]!
+  getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
+  getUserNextJob(date: String!, user: String!): [Booking!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -143,6 +172,16 @@ input RecoverCodeInput {
   rut: String!
 }
 
+union EquipmentsByBookingResultUnion = EquipmentsByBooking | ExternalEquipmentsByBooking
+
+type EquipmentsByBooking {
+  equipments: [EquipmentForInternalBookings!]!
+}
+
+type ExternalEquipmentsByBooking {
+  equipments: [EquipmentForExternalBookings!]!
+}
+
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
   createUser(form: UserInput!): CreateUserResultUnion!
@@ -154,6 +193,7 @@ type Mutation {
   createEquipment(form: EquipmentInput!): CreateEquipmentResultUnion!
   updateEquipment(form: UpdateEquipmentInput!): UpdateEquipmentResultUnion!
   deleteEquipment(form: DeleteEquipmentInput!): DeleteEquipmentResultUnion!
+  createMachineryJobRegistry(form: MachineryJobRegistryInput!): MachineryJobRegistryResultUnion!
   createBooking(form: BookingInput!): CreateBookingResultUnion!
   updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
   deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
@@ -305,25 +345,49 @@ input DeleteEquipmentInput {
   _id: String!
 }
 
+union MachineryJobRegistryResultUnion = Ok
+
+input MachineryJobRegistryInput {
+  _id: String
+  date: String!
+  equipment: String!
+  startHourmeter: Float
+  endHourmeter: Float
+  totalHours: Float
+  client: String
+  building: String
+  workCondition: String
+  load: String
+  totalTravels: Float
+  workingDayType: String
+  observations: String
+  signature: String
+  machineryType: AllowedMachineryType
+}
+
 union CreateBookingResultUnion = Ok
 
 input BookingInput {
   _id: String
   type: AllowedBookingType!
   constructionManager: String
-  machineryType: AllowedMachineryType!
   client: String!
-  equipment: String!
-  operator: String!
-  minHours: Float
-  amountPerHour: Float
-  workCondition: AllowedWorkCondition
+  machines: [BookingMachineryInput!]!
   company: String
   building: String!
   startDate: DateTime!
   endDate: DateTime!
   address: String!
   receivers: [BookingReceiverInput!]!
+}
+
+input BookingMachineryInput {
+  machineryType: AllowedMachineryType!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
 }
 
 input BookingReceiverInput {
@@ -341,13 +405,8 @@ input UpdateBookingInput {
   _id: String!
   type: AllowedBookingType!
   constructionManager: String
-  machineryType: AllowedMachineryType!
   client: String!
-  equipment: String!
-  operator: String!
-  minHours: Float
-  amountPerHour: Float
-  workCondition: AllowedWorkCondition
+  machines: [BookingMachineryInput!]!
   company: String
   building: String!
   startDate: DateTime!
