@@ -1,5 +1,4 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
-import { AllowedMachineryType } from '../machinery/machinery.schema'
 import { Booking } from './booking.schema'
 import { BookingService } from './booking.service'
 import { BookingInput } from './input/booking.input'
