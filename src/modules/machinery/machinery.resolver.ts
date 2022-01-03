@@ -1,11 +1,14 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 import { DeleteEquipmentInput } from './inputs/deleteEquipment.input'
 import { EquipmentInput } from './inputs/equipment.input'
+import { MachineryJobRegistryInput } from './inputs/machineryJobRegistry.input'
 import { UpdateEquipmentInput } from './inputs/updateEquipment.input'
 import { Machinery } from './machinery.schema'
 import { MachineryService } from './machinery.service'
 import { CreateEquipmentResultUnion } from './outputs/createEquipment.output'
 import { DeleteEquipmentResultUnion } from './outputs/deleteEquipment.output'
+import { EquipmentsByBookingResultUnion } from './outputs/equipmentsByBooking.output'
+import { MachineryJobRegistryResultUnion } from './outputs/machineryJobRegistry.output'
 import { UpdateEquipmentResultUnion } from './outputs/updateEquipment.output'
 
 @Resolver()
@@ -38,6 +41,20 @@ export class MachineryResolver {
     async deleteEquipment(@Args('form') form: DeleteEquipmentInput) {
 
         return await this.machineryService.deleteEquipment(form)
+    
+    }
+
+    @Query( () => EquipmentsByBookingResultUnion)
+    async getAllEquipmentsByBuilding(@Args('user') user: string, @Args('date') date: string) {
+
+        return await this.machineryService.getAllEquipmentsByBuilding(user, date)
+    
+    }
+
+    @Mutation( () => MachineryJobRegistryResultUnion)
+    async createMachineryJobRegistry(@Args('form') form: MachineryJobRegistryInput) {
+
+        return await this.machineryService.createMachineryJobRegistry(form)
     
     }
 
