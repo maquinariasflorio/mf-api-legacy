@@ -7,6 +7,7 @@ import { UpdateBookingInput } from './input/updateBooking.input'
 import { CreateBookingResultUnion } from './outputs/createBooking.output'
 import { DeleteBookingResultUnion } from './outputs/deleteBooking.output'
 import { UpdateBookingResultUnion } from './outputs/updateBooking.output'
+import { FullBooking } from './results/booking.result'
 
 @Resolver()
 export class BookingResolver {
@@ -52,6 +53,13 @@ export class BookingResolver {
     async getUserNextJob(@Args('user') user: string, @Args('date') date: string) {
 
         return await this.bookingService.getUserNextJob(user, date)
+    
+    }
+
+    @Query( () => [ FullBooking ] )
+    async getBookingsByDate(@Args('date') date: string) {
+
+        return await this.bookingService.getBookingsByDate(date)
     
     }
 

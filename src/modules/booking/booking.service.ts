@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { InjectModel, InjectConnection } from '@nestjs/mongoose'
 import { ObjectId } from 'mongodb'
 import { Model } from 'mongoose'
@@ -11,6 +11,8 @@ import { UpdateBookingInput } from './input/updateBooking.input'
 import { BookingNotFound } from './results/bookingNotFound.result'
 import { RoleService } from '../role/role.service'
 import { UserService } from '../user/user.service'
+import { isValidObjectId } from 'src/helpers/objectIdValidator'
+import { MachineryService } from '../machinery/machinery.service'
 
 @Injectable()
 export class BookingService {
@@ -22,6 +24,8 @@ export class BookingService {
         private readonly connection: mongoose.Connection,
         private readonly userService: UserService,
         private readonly roleService: RoleService,
+        @Inject(forwardRef( () => MachineryService) )
+        private readonly machineryService: MachineryService,
     ) {}
 
     async findBooking(conditions: Record<string, unknown>) {
@@ -166,7 +170,7 @@ export class BookingService {
             endDate   : { $gte: new Date(date) },
             machines  : {
                 $elemMatch: {
-                    equipment: mongoose.Types.ObjectId.isValid(equipment) ? new ObjectId(equipment) : equipment,
+                    equipment: isValidObjectId(equipment) ? new ObjectId(equipment) : equipment,
                 },
             },
         } )
@@ -223,6 +227,51 @@ export class BookingService {
         }
         
     
+    }
+
+    async getBookingsByDate(date: string) {
+
+        const bookings = await this.findBooking( {
+            startDate : { $lte: new Date(date) },
+            endDate   : { $gte: new Date(date) },
+        } )
+
+        const equipmentsCache = {}
+        const operatorsCache = {}
+
+        for (const booking of bookings) {
+
+            if (booking.machines) {
+
+                if (booking.type === AllowedBookingType.INTERNAL) {
+
+                    for (const machine of booking.machines) {
+
+                        const equipment = equipmentsCache[machine.equipment.toString()]
+                            ? equipmentsCache[machine.equipment.toString()]
+                            : await this.machineryService.findOneEquipment( { _id: machine.equipment } )
+
+                        equipmentsCache[machine.equipment.toString()] = equipment
+
+                        const operator = operatorsCache[machine.operator.toString()]
+                            ? operatorsCache[machine.operator.toString()]
+                            : await this.userService.findOneUser( { _id: machine.operator } )
+
+                        operatorsCache[machine.operator.toString()] = operator
+
+                        machine.equipment = equipment
+                        machine.operator = operator
+                    
+                    }
+                
+                }
+            
+            }
+        
+        }
+    
+        return bookings
+        
     }
 
 }

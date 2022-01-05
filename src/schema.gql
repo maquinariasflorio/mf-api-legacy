@@ -140,6 +140,40 @@ type EquipmentForExternalBookings {
   workCondition: String
 }
 
+type FullBooking {
+  _id: String!
+  type: AllowedBookingType!
+  constructionManager: String
+  client: String!
+  machines: [Machine!]!
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiver!]!
+}
+
+union Machine = ExternalMachine | InternalMachine
+
+type ExternalMachine {
+  machineryType: AllowedMachineryType!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
+type InternalMachine {
+  machineryType: AllowedMachineryType!
+  equipment: Machinery!
+  operator: User!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
@@ -152,6 +186,7 @@ type Query {
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
+  getBookingsByDate(date: String!): [FullBooking!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -194,6 +229,7 @@ type Mutation {
   updateEquipment(form: UpdateEquipmentInput!): UpdateEquipmentResultUnion!
   deleteEquipment(form: DeleteEquipmentInput!): DeleteEquipmentResultUnion!
   createMachineryJobRegistry(form: MachineryJobRegistryInput!): MachineryJobRegistryResultUnion!
+  createMachineryFuelRegistry(form: MachineryFuelRegistryInput!): MachineryFuelRegistryResultUnion!
   createBooking(form: BookingInput!): CreateBookingResultUnion!
   updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
   deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
@@ -363,6 +399,23 @@ input MachineryJobRegistryInput {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+}
+
+union MachineryFuelRegistryResultUnion = Ok
+
+input MachineryFuelRegistryInput {
+  _id: String
+  date: String!
+  type: AllowedMachineryFuelType!
+  equipment: String
+  operator: String
+  hourmeter: Float
+  count: Float!
+}
+
+enum AllowedMachineryFuelType {
+  RECHARGE
+  BUY
 }
 
 union CreateBookingResultUnion = Ok

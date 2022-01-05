@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MachineryService } from './machinery.service'
 import { MachineryResolver } from './machinery.resolver'
 import { MongooseModule } from '@nestjs/mongoose'
@@ -7,19 +7,22 @@ import { BookingModule } from '../booking/booking.module'
 import { UserModule } from '../user/user.module'
 import { RoleModule } from '../role/role.module'
 import { MachineryJobRegistry, MachineryJobRegistrySchema } from './machineryJobRegistry.schema'
+import { MachineryFuelRegistry, MachineryFuelRegistrySchema } from './machineryFuelRegistry.schema'
 
 @Module( {
     imports: [
         MongooseModule.forFeature( [
             { name: Machinery.name, schema: MachinerySchema },
             { name: MachineryJobRegistry.name, schema: MachineryJobRegistrySchema },
+            { name: MachineryFuelRegistry.name, schema: MachineryFuelRegistrySchema },
         ] ),
 
         UserModule,
         RoleModule,
-        BookingModule,
+        forwardRef( () => BookingModule),
     ],
 
-    providers: [ MachineryService, MachineryResolver ],
+    providers : [ MachineryService, MachineryResolver ],
+    exports   : [ MachineryService ],
 } )
 export class MachineryModule {}

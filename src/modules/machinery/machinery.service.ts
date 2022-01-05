@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { InjectModel, InjectConnection } from '@nestjs/mongoose'
 import { ObjectId } from 'mongodb'
 import { Model } from 'mongoose'
@@ -17,6 +17,8 @@ import { RoleService } from '../role/role.service'
 import { EquipmentsByBooking, ExternalEquipmentsByBooking } from './results/equipmentsByBooking.result'
 import { MachineryJobRegistry, MachineryJobRegistryDocument } from './machineryJobRegistry.schema'
 import { MachineryJobRegistryInput } from './inputs/machineryJobRegistry.input'
+import { MachineryFuelRegistry, MachineryFuelRegistryDocument } from './machineryFuelRegistry.schema'
+import { MachineryFuelRegistryInput } from './inputs/machineryFuelRegistry.input'
 
 @Injectable()
 export class MachineryService {
@@ -26,10 +28,13 @@ export class MachineryService {
         private machineryModel: Model<MachineryDocument>,
         @InjectModel(MachineryJobRegistry.name)
         private machineryJobRegistryModel: Model<MachineryJobRegistryDocument>,
+        @InjectModel(MachineryFuelRegistry.name)
+        private machineryFuelRegistryModel: Model<MachineryFuelRegistryDocument>,
         @InjectConnection()
         private readonly connection: mongoose.Connection,
         private readonly userService: UserService,
         private readonly roleService: RoleService,
+        @Inject(forwardRef( () => BookingService) )
         private readonly bookingService: BookingService,
     ) {}
 
@@ -262,6 +267,37 @@ export class MachineryService {
         
         }
     
+    }
+
+    async createMachineryFuelRegistry(machineryFuelRegistry: MachineryFuelRegistryInput) {
+        
+        const session = await this.connection.startSession()
+        session.startTransaction()
+                
+        const newFuelRegistry = new this.machineryFuelRegistryModel( {
+            ...machineryFuelRegistry,
+        } )
+        
+        try {
+    
+            await newFuelRegistry.save()
+            await session.commitTransaction()
+    
+            return new Ok()
+            
+        }
+        catch (error) {
+    
+            await session.abortTransaction()
+            throw error
+            
+        }
+        finally {
+    
+            session.endSession()
+            
+        }
+        
     }
 
 }
