@@ -1,4 +1,5 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql'
+import { CurrentUser } from './../auth/user.decorator'
 import { DeleteEquipmentInput } from './inputs/deleteEquipment.input'
 import { EquipmentInput } from './inputs/equipment.input'
 import { MachineryFuelRegistryInput } from './inputs/machineryFuelRegistry.input'
@@ -12,11 +13,25 @@ import { EquipmentsByBookingResultUnion } from './outputs/equipmentsByBooking.ou
 import { MachineryFuelRegistryResultUnion } from './outputs/machineryFuelRegistry.output'
 import { MachineryJobRegistryResultUnion } from './outputs/machineryJobRegistry.output'
 import { UpdateEquipmentResultUnion } from './outputs/updateEquipment.output'
+import { MachineryMaintenance } from './machineryMaintenance.schema'
+import { Public } from '../auth/public.decorator'
+import { Inject } from '@nestjs/common'
+import { PubSubEngine } from 'graphql-subscriptions'
+import { FullMaintenance } from './results/fullMaintenance.result'
+import { FullMachineryJobRegistry } from './results/fullMachineryJobRegistry.result'
+import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegistry.input'
+import { UpdateMachineryJobRegistryResultUnion } from './outputs/updateMachineryJobRegistry.output'
+import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
+import { DeleteMachineryJobRegistryResultUnion } from './outputs/deleteMachineryJobRegistry.output'
 
 @Resolver()
 export class MachineryResolver {
 
-    constructor(private readonly machineryService: MachineryService) {}
+    constructor(
+        @Inject('PUB_SUB')
+        private pubSub: PubSubEngine,
+        private readonly machineryService: MachineryService
+    ) {}
 
     @Query( () => [ Machinery ] )
     async getAllEquipments() {
@@ -54,9 +69,23 @@ export class MachineryResolver {
     }
 
     @Mutation( () => MachineryJobRegistryResultUnion)
-    async createMachineryJobRegistry(@Args('form') form: MachineryJobRegistryInput) {
+    async createMachineryJobRegistry(@Args('form') form: MachineryJobRegistryInput, @CurrentUser() user: string) {
 
-        return await this.machineryService.createMachineryJobRegistry(form)
+        return await this.machineryService.createMachineryJobRegistry(form, user)
+    
+    }
+
+    @Mutation( () => UpdateMachineryJobRegistryResultUnion)
+    async updateMachineryJobRegistry(@Args('form') form: UpdateMachineryJobRegistryInput) {
+
+        return await this.machineryService.updateMachineryJobRegistry(form)
+    
+    }
+
+    @Mutation( () => DeleteMachineryJobRegistryResultUnion)
+    async deleteMachineryJobRegistry(@Args('form') form: DeleteMachineryJobRegistryInput) {
+
+        return await this.machineryService.deleteMachineryJobRegistry(form)
     
     }
 
@@ -64,6 +93,54 @@ export class MachineryResolver {
     async createMachineryFuelRegistry(@Args('form') form: MachineryFuelRegistryInput) {
 
         return await this.machineryService.createMachineryFuelRegistry(form)
+    
+    }
+
+    @Query( () => [ FullMaintenance ] )
+    async getAllLastMaintenance() {
+
+        return await this.machineryService.getAllLastMaintenance()
+    
+    }
+
+    @Query( () => [ FullMaintenance ] )
+    async getMaintenancePage(@Args('equipment') equipment: string, @Args('lastUid') lastUid: number) {
+
+        return await this.machineryService.getMaintenancePage(equipment, lastUid)
+    
+    }
+
+    @Mutation( () => MachineryMaintenance)
+    async changeMaintenanceStatus(@Args('id') id: string) {
+
+        return await this.machineryService.changeMaintenanceStatus(id)
+    
+    }
+
+    @Public()
+    @Subscription( () => FullMaintenance, {
+        name: 'maintenanceAdded',
+    } )
+    maintenanceAdded() {
+
+        return this.pubSub.asyncIterator('maintenanceAdded')
+    
+    }
+
+    @Public()
+    @Subscription( () => MachineryMaintenance, {
+        name: 'maintenanceStatusUpdated',
+    } )
+    maintenanceStatusUpdated() {
+
+        return this.pubSub.asyncIterator('maintenanceStatusUpdated')
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
+    async getAllMachineryJobRegistry() {
+
+        return await this.machineryService.getAllMachineryJobRegistry()
     
     }
 

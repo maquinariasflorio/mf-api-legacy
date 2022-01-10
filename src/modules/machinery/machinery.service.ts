@@ -7,7 +7,7 @@ import { Ok } from 'src/commons/results/ok.result'
 import { DeleteEquipmentInput } from './inputs/deleteEquipment.input'
 import { EquipmentInput } from './inputs/equipment.input'
 import { UpdateEquipmentInput } from './inputs/updateEquipment.input'
-import { AllowedMachineryType, Machinery, MachineryDocument } from './machinery.schema'
+import { AllowedMachineryType, Machinery, MachineryDocument, MaintenanceMachineryClass } from './machinery.schema'
 import { EquipmentNotFound } from './results/equipmentNotFound.result'
 import { CodeAlreadyExists } from './results/codeAlreadyExists.result'
 import { PatentAlreadyExists } from './results/patentAlreadyExists.result'
@@ -19,17 +19,27 @@ import { MachineryJobRegistry, MachineryJobRegistryDocument } from './machineryJ
 import { MachineryJobRegistryInput } from './inputs/machineryJobRegistry.input'
 import { MachineryFuelRegistry, MachineryFuelRegistryDocument } from './machineryFuelRegistry.schema'
 import { MachineryFuelRegistryInput } from './inputs/machineryFuelRegistry.input'
+import { PubSubEngine } from 'graphql-subscriptions'
+import { MachineryMaintenance, MachineryMaintenanceDocument, MaintenanceStatus } from './machineryMaintenance.schema'
+import { isValidObjectId } from 'src/helpers/objectIdValidator'
+import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegistry.input'
+import { MachineryJobRegistryNotFound } from './results/machineryJobRegistryNotFound.result'
+import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
 
 @Injectable()
 export class MachineryService {
 
     constructor(
+        @Inject('PUB_SUB')
+        private pubSub: PubSubEngine,
         @InjectModel(Machinery.name)
         private machineryModel: Model<MachineryDocument>,
         @InjectModel(MachineryJobRegistry.name)
         private machineryJobRegistryModel: Model<MachineryJobRegistryDocument>,
         @InjectModel(MachineryFuelRegistry.name)
         private machineryFuelRegistryModel: Model<MachineryFuelRegistryDocument>,
+        @InjectModel(MachineryMaintenance.name)
+        private machineryMaintenanceModel: Model<MachineryMaintenanceDocument>,
         @InjectConnection()
         private readonly connection: mongoose.Connection,
         private readonly userService: UserService,
@@ -238,18 +248,29 @@ export class MachineryService {
     
     }
 
-    async createMachineryJobRegistry(machineryJobRegistry: MachineryJobRegistryInput) {
-        
+    async createMachineryJobRegistry(machineryJobRegistry: MachineryJobRegistryInput, user: string) {
+
         const session = await this.connection.startSession()
         session.startTransaction()
             
         const newJobRegistry = new this.machineryJobRegistryModel( {
             ...machineryJobRegistry,
+            equipment : isValidObjectId(machineryJobRegistry.equipment) ? new ObjectId(machineryJobRegistry.equipment) : machineryJobRegistry.equipment,
+            executor  : new ObjectId(user),
         } )
     
         try {
 
             await newJobRegistry.save()
+
+            if (isValidObjectId(machineryJobRegistry.equipment) ) {
+
+                const equipment = await this.findOneEquipment( { _id: new ObjectId(machineryJobRegistry.equipment) } )
+
+                await this.calculateMaintenance(equipment, machineryJobRegistry.endHourmeter)
+            
+            }
+
             await session.commitTransaction()
 
             return new Ok()
@@ -267,6 +288,40 @@ export class MachineryService {
         
         }
     
+    }
+
+    async updateMachineryJobRegistry(machineryJobRegistry: UpdateMachineryJobRegistryInput) {
+
+        const existJobRegistry = await this.machineryJobRegistryModel.findOne( { _id: new ObjectId(machineryJobRegistry._id) } )
+
+        if (!existJobRegistry)
+            return new MachineryJobRegistryNotFound()
+            
+        await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
+            $set: {
+                ...machineryJobRegistry,
+                equipment : new ObjectId(machineryJobRegistry.equipment),
+                executor  : new ObjectId(machineryJobRegistry.executor),
+                client    : new ObjectId(machineryJobRegistry.client),
+                
+            },
+        } )
+
+        return new Ok()
+    
+    }
+
+    async deleteMachineryJobRegistry(machineryJobRegistry: DeleteMachineryJobRegistryInput) {
+            
+        const existJobRegistry = await this.machineryJobRegistryModel.findOne( { _id: new ObjectId(machineryJobRegistry._id) } )
+    
+        if (!existJobRegistry)
+            return new MachineryJobRegistryNotFound()
+    
+        await this.machineryJobRegistryModel.deleteOne( { _id: new ObjectId(machineryJobRegistry._id) } )
+    
+        return new Ok()
+        
     }
 
     async createMachineryFuelRegistry(machineryFuelRegistry: MachineryFuelRegistryInput) {
@@ -297,6 +352,148 @@ export class MachineryService {
             session.endSession()
             
         }
+        
+    }
+
+
+    private readonly maintenanceMetadata = {
+        CLASS_A : { every: 250, steps: [ 500, 1000, 2000 ] },
+        CLASS_B : { every: 500, steps: [ 1000, 3000 ] },
+    }
+
+    async calculateMaintenance(equipment: Machinery, newHourmeter: number) {
+
+        const maintenanceType = this.maintenanceMetadata[equipment.maintenanceClass]
+
+        // calculate the maintenance number to set it as id
+        const maintenanceNumber = Math.floor(newHourmeter/maintenanceType.every)
+
+        const biggestStep = Math.max.apply(null, maintenanceType.steps)
+        const partition = Math.floor(newHourmeter/biggestStep)
+        let kmsOfPartition = newHourmeter - (partition * biggestStep)
+        kmsOfPartition = kmsOfPartition > 0 ? kmsOfPartition : newHourmeter
+
+        const section = Math.floor(kmsOfPartition/maintenanceType.every)
+        const deltaKms = kmsOfPartition - (section * maintenanceType.every)
+
+        const alertMargin = 10
+
+        if (deltaKms >= (maintenanceType.every - alertMargin) ) {
+
+            const nextMaintenance = section * maintenanceType.every + maintenanceType.every
+            const maintenanceStep = maintenanceType.steps.includes(nextMaintenance) ? nextMaintenance : maintenanceType.every
+
+            const maintenance = new this.machineryMaintenanceModel( {
+                uid              : maintenanceNumber + 1,
+                equipment        : equipment._id.toString(),
+                maintenanceClass : equipment.maintenanceClass,
+                step             : maintenanceStep,
+                kmsOfMachinery   : newHourmeter,
+                status           : MaintenanceStatus.PENDING,
+            } )
+
+            try {
+
+                const newMaintenance = await maintenance.save()
+                this.pubSub.publish('maintenanceAdded', { maintenanceAdded: {
+                    ...newMaintenance.toObject(),
+                    equipment,
+                } } )
+
+                return newMaintenance
+            
+            }
+            catch (error) {
+
+                return null
+            
+            }
+        
+        }
+    
+        return null
+    
+    }
+
+    async getAllLastMaintenance() {
+            
+        const allClassAMaintenances = await this.machineryMaintenanceModel.find( { maintenanceClass: MaintenanceMachineryClass.CLASS_A } ).sort( { uid: -1 } ).limit(4).lean()
+        const allClassBMaintenances = await this.machineryMaintenanceModel.find( { maintenanceClass: MaintenanceMachineryClass.CLASS_B } ).sort( { uid: -1 } ).limit(4).lean()
+        
+        const equipments = await this.getAllEquipments()
+
+        const groupedAMaintenances = this.addEquipmentToMaintenances(allClassAMaintenances, equipments)
+        const groupedBMaintenances = this.addEquipmentToMaintenances(allClassBMaintenances, equipments)
+    
+        return [
+            ...groupedAMaintenances,
+            ...groupedBMaintenances,
+        ]
+        
+    }
+
+    private addEquipmentToMaintenances(maintenances: MachineryMaintenance[], equipments: Machinery[] ) {
+            
+        return maintenances.reduce( (acc, maintenance) => {
+        
+            acc.push( {
+                ...maintenance,
+                equipment: equipments.find(equipment => equipment._id.toString() === maintenance.equipment.toString() ),
+            } )
+        
+            return acc
+            
+        }, [] )
+        
+    }
+
+    async getMaintenancePage(equipment: string, lastUid: number) {
+        
+        const maintenances = await this.machineryMaintenanceModel.find( { equipment: new ObjectId(equipment), uid: { $lt: lastUid } } ).sort( { uid: -1 } ).limit(3).lean()
+        const equipments = await this.getAllEquipments()
+
+        return maintenances.reduce( (acc, maintenance) => {
+        
+            acc.push( {
+                ...maintenance,
+                equipment: equipments.find(equipment => equipment._id.toString() === maintenance.equipment.toString() ),
+            } )
+        
+            return acc
+            
+        }, [] )
+    
+    }
+
+    async changeMaintenanceStatus(id) {
+            
+        const maintenance = await this.machineryMaintenanceModel.findOne( { _id: new ObjectId(id) } )
+        maintenance.status = maintenance.status === MaintenanceStatus.PENDING ? MaintenanceStatus.DONE : MaintenanceStatus.PENDING
+        const updatedMaintenance = await maintenance.save()
+
+        this.pubSub.publish('maintenanceStatusUpdated', { maintenanceStatusUpdated: { ...updatedMaintenance.toObject() } } )
+
+        return updatedMaintenance
+        
+    }
+
+    async getAllMachineryJobRegistry() {
+            
+        const jobRegistries = await this.machineryJobRegistryModel.find().lean()
+        const equipments = await this.getAllEquipments()
+        const users = await this.userService.findUser()
+    
+        return jobRegistries.reduce( (acc, jobRegistry) => {
+            
+            acc.push( {
+                ...jobRegistry,
+                equipment : equipments.find(equipment => equipment._id.toString() === jobRegistry.equipment.toString() ),
+                executor  : users.find(user => user._id.toString() === jobRegistry.executor.toString() ),
+            } )
+            
+            return acc
+                
+        }, [] )
         
     }
 

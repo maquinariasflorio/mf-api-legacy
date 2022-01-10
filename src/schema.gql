@@ -140,6 +140,51 @@ type EquipmentForExternalBookings {
   workCondition: String
 }
 
+type MachineryMaintenance {
+  _id: String!
+  uid: Float!
+  equipment: String!
+  maintenanceClass: MaintenanceMachineryClass!
+  step: Float!
+  kmsOfMachinery: Float!
+  status: MaintenanceStatus
+}
+
+enum MaintenanceStatus {
+  PENDING
+  DONE
+}
+
+type FullMaintenance {
+  _id: String!
+  uid: Float!
+  equipment: Machinery!
+  maintenanceClass: MaintenanceMachineryClass!
+  step: Float!
+  kmsOfMachinery: Float!
+  status: MaintenanceStatus
+}
+
+type FullMachineryJobRegistry {
+  _id: String!
+  executor: User!
+  equipment: Machinery!
+  date: DateTime!
+  startHourmeter: Float
+  endHourmeter: Float
+  totalHours: Float
+  client: Client
+  building: String
+  workCondition: AllowedWorkCondition
+  bookingWorkCondition: AllowedWorkCondition
+  load: String
+  totalTravels: Float
+  workingDayType: String
+  observations: String
+  signature: String
+  machineryType: AllowedMachineryType
+}
+
 type FullBooking {
   _id: String!
   type: AllowedBookingType!
@@ -183,6 +228,9 @@ type Query {
   getClient(client: String!): Client!
   getAllEquipments: [Machinery!]!
   getAllEquipmentsByBuilding(date: String!, user: String!): EquipmentsByBookingResultUnion!
+  getAllLastMaintenance: [FullMaintenance!]!
+  getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
+  getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
@@ -229,7 +277,10 @@ type Mutation {
   updateEquipment(form: UpdateEquipmentInput!): UpdateEquipmentResultUnion!
   deleteEquipment(form: DeleteEquipmentInput!): DeleteEquipmentResultUnion!
   createMachineryJobRegistry(form: MachineryJobRegistryInput!): MachineryJobRegistryResultUnion!
+  updateMachineryJobRegistry(form: UpdateMachineryJobRegistryInput!): UpdateMachineryJobRegistryResultUnion!
+  deleteMachineryJobRegistry(form: DeleteMachineryJobRegistryInput!): DeleteMachineryJobRegistryResultUnion!
   createMachineryFuelRegistry(form: MachineryFuelRegistryInput!): MachineryFuelRegistryResultUnion!
+  changeMaintenanceStatus(id: String!): MachineryMaintenance!
   createBooking(form: BookingInput!): CreateBookingResultUnion!
   updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
   deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
@@ -393,12 +444,45 @@ input MachineryJobRegistryInput {
   client: String
   building: String
   workCondition: String
+  bookingWorkCondition: String
   load: String
   totalTravels: Float
   workingDayType: String
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+}
+
+union UpdateMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound
+
+type MachineryJobRegistryNotFound {
+  message: String!
+}
+
+input UpdateMachineryJobRegistryInput {
+  _id: String!
+  date: String!
+  equipment: String!
+  startHourmeter: Float
+  endHourmeter: Float
+  totalHours: Float
+  client: String
+  building: String
+  workCondition: String
+  bookingWorkCondition: String
+  load: String
+  totalTravels: Float
+  workingDayType: String
+  observations: String
+  signature: String
+  machineryType: AllowedMachineryType
+  executor: String!
+}
+
+union DeleteMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound
+
+input DeleteMachineryJobRegistryInput {
+  _id: String!
 }
 
 union MachineryFuelRegistryResultUnion = Ok
@@ -472,4 +556,9 @@ union DeleteBookingResultUnion = Ok | BookingNotFound
 
 input DeleteBookingInput {
   _id: String!
+}
+
+type Subscription {
+  maintenanceAdded: FullMaintenance!
+  maintenanceStatusUpdated: MachineryMaintenance!
 }

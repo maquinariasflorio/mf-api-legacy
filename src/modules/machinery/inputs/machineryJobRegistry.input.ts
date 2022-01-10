@@ -32,6 +32,9 @@ export class MachineryJobRegistryInput {
     workCondition?: string;
 
     @Field( { nullable: true } )
+    bookingWorkCondition?: string;
+
+    @Field( { nullable: true } )
     load?: string;
 
     @Field( { nullable: true } )

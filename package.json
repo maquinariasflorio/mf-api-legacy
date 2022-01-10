@@ -36,6 +36,7 @@
         "apollo-server-express": "^3.5.0",
         "bcrypt": "^5.0.1",
         "graphql": "^15",
+        "graphql-subscriptions": "^2.0.0",
         "handlebars": "^4.7.7",
         "joi": "^17.5.0",
         "migrate-mongo": "^8.2.3",
