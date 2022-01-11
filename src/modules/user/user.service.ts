@@ -25,7 +25,7 @@ export class UserService {
         private readonly mailerService: MailerService,
     ) {}
 
-    async findUser(conditions: Record<string, unknown>) {
+    async findUser(conditions?: Record<string, unknown>) {
 
         return await this.userModel.find(conditions).lean()
     

@@ -21,6 +21,7 @@ import { ClientModule } from './modules/client/client.module'
 import { ViewModule } from './modules/view/view.module'
 import { MachineryModule } from './modules/machinery/machinery.module'
 import { BookingModule } from './modules/booking/booking.module'
+import { PubsubModule } from './modules/pubsub/pubsub.module'
 
 @Module( {
     imports: [
@@ -46,11 +47,21 @@ import { BookingModule } from './modules/booking/booking.module'
         } ),
 
         GraphQLModule.forRoot( {
-            autoSchemaFile : join(process.cwd(), 'src/schema.gql'),
-            context        : ( { req } ) => ( { req } ),
-            playground     : process.env.NODE_ENV !== 'production',
-            subscriptions  : {
-                'graphql-ws': true,
+            autoSchemaFile              : join(process.cwd(), 'src/schema.gql'),
+            context                     : ( { req } ) => ( { req } ),
+            playground                  : process.env.NODE_ENV !== 'production',
+            installSubscriptionHandlers : true,
+            subscriptions               : {
+                'subscriptions-transport-ws': {
+                    path      : '/graphql',
+                    onConnect : (connectionParams) => {
+
+                        return {
+                            ...connectionParams,
+                        }
+                    
+                    },
+                },
             },
         } ),
 
@@ -95,6 +106,7 @@ import { BookingModule } from './modules/booking/booking.module'
         ClientModule,
         MachineryModule,
         BookingModule,
+        PubsubModule,
     ],
 
     controllers : [],
