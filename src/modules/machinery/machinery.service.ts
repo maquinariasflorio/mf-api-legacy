@@ -477,9 +477,9 @@ export class MachineryService {
         
     }
 
-    async getAllMachineryJobRegistry() {
+    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
             
-        const jobRegistries = await this.machineryJobRegistryModel.find().lean()
+        const jobRegistries = await this.machineryJobRegistryModel.find(conditions).lean()
         const equipments = await this.getAllEquipments()
         const users = await this.userService.findUser()
     
@@ -495,6 +495,20 @@ export class MachineryService {
                 
         }, [] )
         
+    }
+
+    async getAllMachineryJobRegistryByUserAndDate(userId: string, startDate: string, endDate: string) {
+
+        const conditions = {
+            executor : new ObjectId(userId),
+            date     : {
+                $gte : new Date(startDate),
+                $lte : new Date(endDate),
+            },
+        }
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
     }
 
 }

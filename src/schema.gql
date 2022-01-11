@@ -231,6 +231,7 @@ type Query {
   getAllLastMaintenance: [FullMaintenance!]!
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
   getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
