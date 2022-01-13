@@ -109,4 +109,10 @@ export class FullMachineryJobRegistry {
     @Field( () => AllowedMachineryType, { nullable: true } )
     machineryType?: AllowedMachineryType;
 
+    @Field( () => Number)
+    folio: number;
+
+    @Field( () => String)
+    address: string;
+
 }

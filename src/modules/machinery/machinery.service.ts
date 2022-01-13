@@ -221,6 +221,7 @@ export class MachineryService {
 
                                 building : booking.building,
                                 operator : user,
+                                address  : booking.address,
                             } )
                         
                         }
@@ -260,6 +261,7 @@ export class MachineryService {
 
                             building : booking.building,
                             operator : machine.operator,
+                            address  : booking.address,
                         } )
                     
                     }
@@ -293,9 +295,11 @@ export class MachineryService {
         const client = await this.clientService.findOneClient( { _id: new ObjectId(machineryJobRegistry.client) } )
         const operator = isValidObjectId(machineryJobRegistry.operator) ? await this.userService.findOneUser( { _id: new ObjectId(machineryJobRegistry.operator) } ) : { name: machineryJobRegistry.operator }
         
+        const executor = await this.userService.findOneUser( { _id: new ObjectId(user) } )
+
         const newJobRegistry = new this.machineryJobRegistryModel( {
             ...machineryJobRegistry,
-            executor: new ObjectId(user),
+            executor,
             equipment,
             client,
             operator,
@@ -537,13 +541,11 @@ export class MachineryService {
     async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
             
         const jobRegistries = await this.machineryJobRegistryModel.find(conditions).lean()
-        const users = await this.userService.findUser()
     
         return jobRegistries.reduce( (acc, jobRegistry) => {
             
             acc.push( {
                 ...jobRegistry,
-                executor: users.find(user => user._id.toString() === jobRegistry.executor.toString() ),
             } )
             
             return acc
@@ -555,8 +557,9 @@ export class MachineryService {
     async getAllMachineryJobRegistryByUserAndDate(userId: string, startDate: string, endDate: string) {
 
         const conditions = {
-            executor : new ObjectId(userId),
-            date     : {
+            "executor._id": new ObjectId(userId),
+
+            "date": {
                 $gte : new Date(startDate),
                 $lte : new Date(endDate),
             },

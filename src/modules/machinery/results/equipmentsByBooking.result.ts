@@ -18,6 +18,9 @@ export class EquipmentForInternalBookings extends Machinery {
     @Field( () => User)
     operator: User;
     
+    @Field( () => String)
+    address: string;
+
 }
 
 @ObjectType()
@@ -57,6 +60,9 @@ export class EquipmentForExternalBookings {
 
     @Field( () => String)
     operator: string;
+
+    @Field( () => String)
+    address: string;
 
 }
 

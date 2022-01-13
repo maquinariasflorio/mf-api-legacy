@@ -134,6 +134,7 @@ type EquipmentForInternalBookings {
   client: Client!
   building: String!
   operator: User!
+  address: String!
 }
 
 type EquipmentForExternalBookings {
@@ -144,6 +145,7 @@ type EquipmentForExternalBookings {
   client: Client!
   building: String!
   operator: String!
+  address: String!
 }
 
 type MachineryMaintenance {
@@ -190,6 +192,8 @@ type FullMachineryJobRegistry {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+  folio: Float!
+  address: String!
 }
 
 union Equipment = ExternalEquipment | InternalEquipment
@@ -498,6 +502,7 @@ input MachineryJobRegistryInput {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+  address: String!
 }
 
 union UpdateMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound
@@ -524,6 +529,7 @@ input UpdateMachineryJobRegistryInput {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+  address: String!
   executor: String!
 }
 

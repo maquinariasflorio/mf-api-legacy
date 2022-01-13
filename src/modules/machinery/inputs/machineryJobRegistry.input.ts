@@ -55,4 +55,7 @@ export class MachineryJobRegistryInput {
     @Field( () => AllowedMachineryType, { nullable: true } )
     machineryType?: AllowedMachineryType;
 
+    @Field()
+    address: string;
+
 }

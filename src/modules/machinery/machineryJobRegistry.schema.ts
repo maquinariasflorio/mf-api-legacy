@@ -1,9 +1,8 @@
 import { ObjectType, Field } from '@nestjs/graphql'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document, Schema as MongooseSchema, ObjectId, model, Model } from 'mongoose'
+import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose'
 import { AllowedWorkCondition } from '../booking/booking.schema'
 import { Client } from '../client/client.schema'
-import { Counter, CounterDocument, CounterSchema } from '../counter/counter.schema'
 import { User } from '../user/user.schema'
 import { AllowedMachineryType, Machinery } from './machinery.schema'
 
@@ -81,13 +80,17 @@ export class MachineryJobRegistry {
     @Prop()
     machineryType?: AllowedMachineryType;
 
-    @Field( () => String)
-    @Prop( { type: MongooseSchema.Types.ObjectId, ref: 'User' } )
+    @Field( () => User)
+    @Prop( { type: MongooseSchema.Types.Mixed } )
     executor: User;
 
     @Field( () => Number)
     @Prop()
     folio?: number;
+
+    @Field( () => String)
+    @Prop()
+    address: string;
 
 }
 
