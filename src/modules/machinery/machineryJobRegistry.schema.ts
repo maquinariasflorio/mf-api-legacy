@@ -1,10 +1,11 @@
 import { ObjectType, Field } from '@nestjs/graphql'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose'
+import { Document, Schema as MongooseSchema, ObjectId, model, Model } from 'mongoose'
 import { AllowedWorkCondition } from '../booking/booking.schema'
 import { Client } from '../client/client.schema'
+import { Counter, CounterDocument, CounterSchema } from '../counter/counter.schema'
 import { User } from '../user/user.schema'
-import { AllowedMachineryType } from './machinery.schema'
+import { AllowedMachineryType, Machinery } from './machinery.schema'
 
 @ObjectType()
 @Schema( {
@@ -20,9 +21,13 @@ export class MachineryJobRegistry {
     @Prop()
     date: Date;
 
-    @Field( () => String)
+    @Field( () => Machinery)
     @Prop( { type: MongooseSchema.Types.Mixed } )
     equipment: any;
+
+    @Field( () => User)
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    operator: any;
 
     @Field( () => Number, { nullable: true } )
     @Prop()
@@ -36,13 +41,13 @@ export class MachineryJobRegistry {
     @Prop()
     totalHours?: number;
 
-    @Field( () => String, { nullable: true } )
-    @Prop( { type: MongooseSchema.Types.ObjectId, ref: 'Client' } )
-    client?: Client;
+    @Field( () => Client)
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    client: Client;
 
-    @Field( () => String, { nullable: true } )
+    @Field( () => String)
     @Prop()
-    building?: string;
+    building: string;
 
     @Field( () => AllowedWorkCondition, { nullable: true } )
     @Prop()
@@ -79,6 +84,10 @@ export class MachineryJobRegistry {
     @Field( () => String)
     @Prop( { type: MongooseSchema.Types.ObjectId, ref: 'User' } )
     executor: User;
+
+    @Field( () => Number)
+    @Prop()
+    folio?: number;
 
 }
 

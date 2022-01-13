@@ -13,6 +13,9 @@ export class MachineryJobRegistryInput {
     @Field()
     equipment: string;
 
+    @Field()
+    operator: string;
+
     @Field( { nullable: true } )
     startHourmeter?: number;
 

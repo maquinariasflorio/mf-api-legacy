@@ -1,8 +1,56 @@
-import { ObjectType, Field } from '@nestjs/graphql'
+import { ObjectType, Field, createUnionType } from '@nestjs/graphql'
 import { AllowedWorkCondition } from 'src/modules/booking/booking.schema'
 import { Client } from 'src/modules/client/client.schema'
 import { AllowedMachineryType, Machinery } from 'src/modules/machinery/machinery.schema'
 import { User } from 'src/modules/user/user.schema'
+
+@ObjectType()
+export class ExternalEquipment {
+
+    @Field( () => String)
+    name: string;
+
+}
+
+@ObjectType()
+export class InternalEquipment extends Machinery {}
+
+const Equipment = createUnionType( {
+    name        : "Equipment",
+    types       : () => [ ExternalEquipment, InternalEquipment ],
+    resolveType : (value) => {
+
+        if (value._id)
+            return InternalEquipment
+        
+        return ExternalEquipment
+    
+    },
+} )
+
+@ObjectType()
+export class ExternalOperator {
+
+    @Field( () => String)
+    name: string;
+
+}
+
+@ObjectType()
+export class InternalOperator extends User {}
+
+const Operator = createUnionType( {
+    name        : "Operator",
+    types       : () => [ ExternalOperator, InternalOperator ],
+    resolveType : (value) => {
+
+        if (value._id)
+            return InternalOperator
+        
+        return ExternalOperator
+    
+    },
+} )
 
 @ObjectType()
 export class FullMachineryJobRegistry {
@@ -13,8 +61,11 @@ export class FullMachineryJobRegistry {
     @Field( () => User)
     executor: User;
 
-    @Field( () => Machinery)
-    equipment: Machinery;
+    @Field( () => Equipment)
+    equipment: typeof Equipment;
+
+    @Field( () => Operator)
+    operator: typeof Operator;
 
     @Field( () => Date)
     date: Date;
@@ -28,11 +79,11 @@ export class FullMachineryJobRegistry {
     @Field( () => Number, { nullable: true } )
     totalHours?: number;
 
-    @Field( () => Client, { nullable: true } )
-    client?: Client;
+    @Field( () => Client)
+    client: Client;
 
-    @Field( () => String, { nullable: true } )
-    building?: string;
+    @Field( () => String)
+    building: string;
 
     @Field( () => AllowedWorkCondition, { nullable: true } )
     workCondition?: AllowedWorkCondition;

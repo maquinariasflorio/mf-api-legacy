@@ -25,6 +25,9 @@ import { isValidObjectId } from 'src/helpers/objectIdValidator'
 import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegistry.input'
 import { MachineryJobRegistryNotFound } from './results/machineryJobRegistryNotFound.result'
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
+import { ClientService } from '../client/client.service'
+import { AllowedBookingType } from '../booking/booking.schema'
+import { CounterService } from '../counter/counter.service'
 
 @Injectable()
 export class MachineryService {
@@ -44,6 +47,8 @@ export class MachineryService {
         private readonly connection: mongoose.Connection,
         private readonly userService: UserService,
         private readonly roleService: RoleService,
+        private readonly clientService: ClientService,
+        private readonly counterService: CounterService,
         @Inject(forwardRef( () => BookingService) )
         private readonly bookingService: BookingService,
     ) {}
@@ -180,15 +185,23 @@ export class MachineryService {
 
         const bookings = await this.bookingService.getAllBookingsByUserAndDate(userId, date, role.name)
 
-        let equipments = []
+        const equipments = []
+
+        // If role is operator, we knows that the booking is internal
 
         if (role.name === 'operator') {
 
-            const cache = {}
+            const equipmentCache = {}
+            const clientCache = {}
 
             for (const booking of bookings) {
 
                 if (booking.machines) {
+
+                    const _idClient = booking.client._id.toString()
+
+                    if (!clientCache[_idClient] )
+                        clientCache[_idClient] = await this.clientService.findOneClient( { _id: new ObjectId(_idClient) } )
 
                     for (const machine of booking.machines) {
 
@@ -196,13 +209,18 @@ export class MachineryService {
 
                             const _id = machine.equipment.toString()
 
-                            if (!cache[_id] )
-                                cache[_id] = await this.findOneEquipment( { _id: new ObjectId(_id) } )
-
+                            if (!equipmentCache[_id] )
+                                equipmentCache[_id] = await this.findOneEquipment( { _id: new ObjectId(_id) } )
 
                             equipments.push( {
-                                ...cache[_id],
-                                workCondition: machine.workCondition,
+                                ...equipmentCache[_id],
+                                workCondition : machine.workCondition,
+                                client        : {
+                                    ...clientCache[_idClient],
+                                },
+
+                                building : booking.building,
+                                operator : user,
                             } )
                         
                         }
@@ -218,26 +236,37 @@ export class MachineryService {
         }
         else if (role.name === 'construction_manager') {
 
-            equipments = bookings.reduce( (acc, booking) => {
+            const clientCache = {}
+
+            for (const booking of bookings) {
 
                 if (booking.machines) {
-    
-                    booking.machines.forEach(machine => {
-    
-                        acc.push( {
+
+                    const _idClient = booking.client._id.toString()
+
+                    if (!clientCache[_idClient] )
+                        clientCache[_idClient] = await this.clientService.findOneClient( { _id: new ObjectId(_idClient) } )
+
+                    for (const machine of booking.machines) {
+
+                        equipments.push( {
                             _id           : machine.equipment,
                             type          : machine.machineryType,
                             minHours      : machine.minHours,
                             workCondition : machine.workCondition,
+                            client        : {
+                                ...clientCache[_idClient],
+                            },
+
+                            building : booking.building,
+                            operator : machine.operator,
                         } )
                     
-                    } )
+                    }
                 
                 }
-    
-                return acc
             
-            }, [] )
+            }
 
             return new ExternalEquipmentsByBooking(equipments)
         
@@ -252,16 +281,41 @@ export class MachineryService {
 
         const session = await this.connection.startSession()
         session.startTransaction()
-            
+
+        let equipment: any = { name: machineryJobRegistry.equipment }
+        if (isValidObjectId(machineryJobRegistry.equipment) ) {
+
+            const equipmentModel = await this.findOneEquipment( { _id: new ObjectId(machineryJobRegistry.equipment) } )
+            equipment = equipmentModel
+        
+        }
+
+        const client = await this.clientService.findOneClient( { _id: new ObjectId(machineryJobRegistry.client) } )
+        const operator = isValidObjectId(machineryJobRegistry.operator) ? await this.userService.findOneUser( { _id: new ObjectId(machineryJobRegistry.operator) } ) : { name: machineryJobRegistry.operator }
+        
         const newJobRegistry = new this.machineryJobRegistryModel( {
             ...machineryJobRegistry,
-            equipment : isValidObjectId(machineryJobRegistry.equipment) ? new ObjectId(machineryJobRegistry.equipment) : machineryJobRegistry.equipment,
-            executor  : new ObjectId(user),
+            executor: new ObjectId(user),
+            equipment,
+            client,
+            operator,
         } )
     
         try {
 
-            await newJobRegistry.save()
+            const newDocument = await newJobRegistry.save()
+
+            const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
+                $inc: {
+                    lastFolio: 1,
+                },
+            } )
+
+            await this.machineryJobRegistryModel.updateOne( { _id: newDocument._id }, {
+                $set: {
+                    folio: lastFolio,
+                },
+            } )
 
             if (isValidObjectId(machineryJobRegistry.equipment) ) {
 
@@ -296,14 +350,17 @@ export class MachineryService {
 
         if (!existJobRegistry)
             return new MachineryJobRegistryNotFound()
+
+        delete machineryJobRegistry.executor
+        delete machineryJobRegistry.equipment
+        delete machineryJobRegistry.operator
+
+        const client = await this.clientService.findOneClient( { _id: new ObjectId(machineryJobRegistry.client) } )
             
         await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
             $set: {
                 ...machineryJobRegistry,
-                equipment : new ObjectId(machineryJobRegistry.equipment),
-                executor  : new ObjectId(machineryJobRegistry.executor),
-                client    : new ObjectId(machineryJobRegistry.client),
-                
+                client,
             },
         } )
 
@@ -480,15 +537,13 @@ export class MachineryService {
     async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
             
         const jobRegistries = await this.machineryJobRegistryModel.find(conditions).lean()
-        const equipments = await this.getAllEquipments()
         const users = await this.userService.findUser()
     
         return jobRegistries.reduce( (acc, jobRegistry) => {
             
             acc.push( {
                 ...jobRegistry,
-                equipment : equipments.find(equipment => equipment._id.toString() === jobRegistry.equipment.toString() ),
-                executor  : users.find(user => user._id.toString() === jobRegistry.executor.toString() ),
+                executor: users.find(user => user._id.toString() === jobRegistry.executor.toString() ),
             } )
             
             return acc
@@ -505,6 +560,16 @@ export class MachineryService {
                 $gte : new Date(startDate),
                 $lte : new Date(endDate),
             },
+        }
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
+    async getAllMachineryJobRegistryByDate(date: string) {
+
+        const conditions = {
+            date: new Date(date),
         }
 
         return await this.getAllMachineryJobRegistry(conditions)

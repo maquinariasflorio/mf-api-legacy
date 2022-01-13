@@ -151,4 +151,11 @@ export class MachineryResolver {
     
     }
 
+    @Query( () => [ FullMachineryJobRegistry ] )
+    async getAllMachineryJobRegistryByDate(@Args('date') date: string) {
+
+        return await this.machineryService.getAllMachineryJobRegistryByDate(date)
+    
+    }
+
 }

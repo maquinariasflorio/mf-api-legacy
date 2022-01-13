@@ -131,6 +131,9 @@ type EquipmentForInternalBookings {
   volume: Float
   maintenanceClass: MaintenanceMachineryClass
   workCondition: String
+  client: Client!
+  building: String!
+  operator: User!
 }
 
 type EquipmentForExternalBookings {
@@ -138,6 +141,9 @@ type EquipmentForExternalBookings {
   type: String!
   minHours: Float!
   workCondition: String
+  client: Client!
+  building: String!
+  operator: String!
 }
 
 type MachineryMaintenance {
@@ -168,13 +174,14 @@ type FullMaintenance {
 type FullMachineryJobRegistry {
   _id: String!
   executor: User!
-  equipment: Machinery!
+  equipment: Equipment!
+  operator: Operator!
   date: DateTime!
   startHourmeter: Float
   endHourmeter: Float
   totalHours: Float
-  client: Client
-  building: String
+  client: Client!
+  building: String!
   workCondition: AllowedWorkCondition
   bookingWorkCondition: AllowedWorkCondition
   load: String
@@ -183,6 +190,43 @@ type FullMachineryJobRegistry {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+}
+
+union Equipment = ExternalEquipment | InternalEquipment
+
+type ExternalEquipment {
+  name: String!
+}
+
+type InternalEquipment {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+}
+
+union Operator = ExternalOperator | InternalOperator
+
+type ExternalOperator {
+  name: String!
+}
+
+type InternalOperator {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  password: String!
+  isActive: Boolean!
+  role: String!
+  isSystemAdmin: Boolean!
+  signature: String
 }
 
 type FullBooking {
@@ -232,6 +276,7 @@ type Query {
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
   getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
   getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
@@ -439,6 +484,7 @@ input MachineryJobRegistryInput {
   _id: String
   date: String!
   equipment: String!
+  operator: String!
   startHourmeter: Float
   endHourmeter: Float
   totalHours: Float
@@ -464,6 +510,7 @@ input UpdateMachineryJobRegistryInput {
   _id: String!
   date: String!
   equipment: String!
+  operator: String!
   startHourmeter: Float
   endHourmeter: Float
   totalHours: Float

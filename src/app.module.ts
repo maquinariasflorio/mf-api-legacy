@@ -22,6 +22,7 @@ import { ViewModule } from './modules/view/view.module'
 import { MachineryModule } from './modules/machinery/machinery.module'
 import { BookingModule } from './modules/booking/booking.module'
 import { PubsubModule } from './modules/pubsub/pubsub.module'
+import { CounterModule } from './modules/counter/counter.module';
 
 @Module( {
     imports: [
@@ -107,6 +108,7 @@ import { PubsubModule } from './modules/pubsub/pubsub.module'
         MachineryModule,
         BookingModule,
         PubsubModule,
+        CounterModule,
     ],
 
     controllers : [],

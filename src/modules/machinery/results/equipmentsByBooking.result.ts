@@ -1,4 +1,6 @@
 import { ObjectType, Field } from '@nestjs/graphql'
+import { Client } from 'src/modules/client/client.schema'
+import { User } from 'src/modules/user/user.schema'
 import { Machinery } from '../machinery.schema'
 
 @ObjectType()
@@ -6,6 +8,15 @@ export class EquipmentForInternalBookings extends Machinery {
 
     @Field( () => String, { nullable: true } )
     workCondition?: string;
+
+    @Field( () => Client)
+    client: Client;
+
+    @Field( () => String)
+    building: string;
+
+    @Field( () => User)
+    operator: User;
     
 }
 
@@ -37,7 +48,16 @@ export class EquipmentForExternalBookings {
 
     @Field( () => String, { nullable: true } )
     workCondition?: string;
-    
+
+    @Field( () => Client)
+    client: Client;
+
+    @Field( () => String)
+    building: string;
+
+    @Field( () => String)
+    operator: string;
+
 }
 
 
