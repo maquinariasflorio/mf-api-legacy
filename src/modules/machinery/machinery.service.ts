@@ -25,6 +25,8 @@ import { isValidObjectId } from 'src/helpers/objectIdValidator'
 import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegistry.input'
 import { MachineryJobRegistryNotFound } from './results/machineryJobRegistryNotFound.result'
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
+import { ClientService } from '../client/client.service'
+import { CounterService } from '../counter/counter.service'
 
 @Injectable()
 export class MachineryService {
@@ -44,11 +46,13 @@ export class MachineryService {
         private readonly connection: mongoose.Connection,
         private readonly userService: UserService,
         private readonly roleService: RoleService,
+        private readonly clientService: ClientService,
+        private readonly counterService: CounterService,
         @Inject(forwardRef( () => BookingService) )
         private readonly bookingService: BookingService,
     ) {}
 
-    async findEquipment(conditions: Record<string, unknown>) {
+    async findEquipment(conditions?: Record<string, unknown>) {
 
         return await this.machineryModel.find(conditions).lean()
     
@@ -180,15 +184,23 @@ export class MachineryService {
 
         const bookings = await this.bookingService.getAllBookingsByUserAndDate(userId, date, role.name)
 
-        let equipments = []
+        const equipments = []
+
+        // If role is operator, we knows that the booking is internal
 
         if (role.name === 'operator') {
 
-            const cache = {}
+            const equipmentCache = {}
+            const clientCache = {}
 
             for (const booking of bookings) {
 
                 if (booking.machines) {
+
+                    const _idClient = booking.client._id.toString()
+
+                    if (!clientCache[_idClient] )
+                        clientCache[_idClient] = await this.clientService.findOneClient( { _id: new ObjectId(_idClient) } )
 
                     for (const machine of booking.machines) {
 
@@ -196,13 +208,19 @@ export class MachineryService {
 
                             const _id = machine.equipment.toString()
 
-                            if (!cache[_id] )
-                                cache[_id] = await this.findOneEquipment( { _id: new ObjectId(_id) } )
-
+                            if (!equipmentCache[_id] )
+                                equipmentCache[_id] = await this.findOneEquipment( { _id: new ObjectId(_id) } )
 
                             equipments.push( {
-                                ...cache[_id],
-                                workCondition: machine.workCondition,
+                                ...equipmentCache[_id],
+                                workCondition : machine.workCondition,
+                                client        : {
+                                    ...clientCache[_idClient],
+                                },
+
+                                building : booking.building,
+                                operator : user,
+                                address  : booking.address,
                             } )
                         
                         }
@@ -218,26 +236,38 @@ export class MachineryService {
         }
         else if (role.name === 'construction_manager') {
 
-            equipments = bookings.reduce( (acc, booking) => {
+            const clientCache = {}
+
+            for (const booking of bookings) {
 
                 if (booking.machines) {
-    
-                    booking.machines.forEach(machine => {
-    
-                        acc.push( {
+
+                    const _idClient = booking.client._id.toString()
+
+                    if (!clientCache[_idClient] )
+                        clientCache[_idClient] = await this.clientService.findOneClient( { _id: new ObjectId(_idClient) } )
+
+                    for (const machine of booking.machines) {
+
+                        equipments.push( {
                             _id           : machine.equipment,
                             type          : machine.machineryType,
                             minHours      : machine.minHours,
                             workCondition : machine.workCondition,
+                            client        : {
+                                ...clientCache[_idClient],
+                            },
+
+                            building : booking.building,
+                            operator : machine.operator,
+                            address  : booking.address,
                         } )
                     
-                    } )
+                    }
                 
                 }
-    
-                return acc
             
-            }, [] )
+            }
 
             return new ExternalEquipmentsByBooking(equipments)
         
@@ -252,16 +282,43 @@ export class MachineryService {
 
         const session = await this.connection.startSession()
         session.startTransaction()
-            
+
+        let equipment: any = { name: machineryJobRegistry.equipment }
+        if (isValidObjectId(machineryJobRegistry.equipment) ) {
+
+            const equipmentModel = await this.findOneEquipment( { _id: new ObjectId(machineryJobRegistry.equipment) } )
+            equipment = equipmentModel
+        
+        }
+
+        const client = await this.clientService.findOneClient( { _id: new ObjectId(machineryJobRegistry.client) } )
+        const operator = isValidObjectId(machineryJobRegistry.operator) ? await this.userService.findOneUser( { _id: new ObjectId(machineryJobRegistry.operator) } ) : { name: machineryJobRegistry.operator }
+        
+        const executor = await this.userService.findOneUser( { _id: new ObjectId(user) } )
+
         const newJobRegistry = new this.machineryJobRegistryModel( {
             ...machineryJobRegistry,
-            equipment : isValidObjectId(machineryJobRegistry.equipment) ? new ObjectId(machineryJobRegistry.equipment) : machineryJobRegistry.equipment,
-            executor  : new ObjectId(user),
+            executor,
+            equipment,
+            client,
+            operator,
         } )
     
         try {
 
-            await newJobRegistry.save()
+            const newDocument = await newJobRegistry.save()
+
+            const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
+                $inc: {
+                    lastFolio: 1,
+                },
+            } )
+
+            await this.machineryJobRegistryModel.updateOne( { _id: newDocument._id }, {
+                $set: {
+                    folio: lastFolio,
+                },
+            } )
 
             if (isValidObjectId(machineryJobRegistry.equipment) ) {
 
@@ -296,14 +353,17 @@ export class MachineryService {
 
         if (!existJobRegistry)
             return new MachineryJobRegistryNotFound()
+
+        delete machineryJobRegistry.executor
+        delete machineryJobRegistry.equipment
+        delete machineryJobRegistry.operator
+
+        const client = await this.clientService.findOneClient( { _id: new ObjectId(machineryJobRegistry.client) } )
             
         await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
             $set: {
                 ...machineryJobRegistry,
-                equipment : new ObjectId(machineryJobRegistry.equipment),
-                executor  : new ObjectId(machineryJobRegistry.executor),
-                client    : new ObjectId(machineryJobRegistry.client),
-                
+                client,
             },
         } )
 
@@ -328,9 +388,23 @@ export class MachineryService {
         
         const session = await this.connection.startSession()
         session.startTransaction()
+
+        let previousRegistry = null
+        
+        if (isValidObjectId(machineryFuelRegistry.equipment) ) {
+
+            previousRegistry = await this.machineryFuelRegistryModel.find( {
+                equipment : machineryFuelRegistry.equipment,
+                date      : {
+                    $lt: new Date(machineryFuelRegistry.date),
+                },
+            } ).sort( { date: -1 } ).limit(1).lean()
+        
+        }
                 
         const newFuelRegistry = new this.machineryFuelRegistryModel( {
             ...machineryFuelRegistry,
+            previousRegistry: previousRegistry && previousRegistry[0] ? previousRegistry[0]._id.toString() : null,
         } )
         
         try {
@@ -355,6 +429,58 @@ export class MachineryService {
         
     }
 
+    async getAllFuelRegistries(startDate:string, endDate: string) {
+            
+        const registries = await this.machineryFuelRegistryModel.find( {
+            date: {
+                $gte : new Date(startDate),
+                $lte : new Date(endDate),
+            },
+        } )
+
+        const equipments = await this.findEquipment()
+        const operators = await this.userService.findUser()
+
+        return registries.map( (registry) => {
+                
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === registry.equipment)
+            const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
+
+            return {
+                ...registry.toJSON(),
+                equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
+                operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
+            }
+    
+        } )
+        
+    }
+
+    async getAllPreviousFuelRegistries(equipmentsId: string[] ) {
+            
+        const registries = await this.machineryFuelRegistryModel.find( {
+            _id: {
+                $in: equipmentsId,
+            },
+        } ).lean()
+
+        const equipments = await this.findEquipment()
+        const operators = await this.userService.findUser()
+
+        return registries.map( (registry) => {
+                
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === registry.equipment)
+            const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
+
+            return {
+                ...registry,
+                equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
+                operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
+            }
+    
+        } )
+        
+    }
 
     private readonly maintenanceMetadata = {
         CLASS_A : { every: 250, steps: [ 500, 1000, 2000 ] },
@@ -480,15 +606,11 @@ export class MachineryService {
     async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
             
         const jobRegistries = await this.machineryJobRegistryModel.find(conditions).lean()
-        const equipments = await this.getAllEquipments()
-        const users = await this.userService.findUser()
     
         return jobRegistries.reduce( (acc, jobRegistry) => {
             
             acc.push( {
                 ...jobRegistry,
-                equipment : equipments.find(equipment => equipment._id.toString() === jobRegistry.equipment.toString() ),
-                executor  : users.find(user => user._id.toString() === jobRegistry.executor.toString() ),
             } )
             
             return acc
@@ -500,11 +622,22 @@ export class MachineryService {
     async getAllMachineryJobRegistryByUserAndDate(userId: string, startDate: string, endDate: string) {
 
         const conditions = {
-            executor : new ObjectId(userId),
-            date     : {
+            "executor._id": new ObjectId(userId),
+
+            "date": {
                 $gte : new Date(startDate),
                 $lte : new Date(endDate),
             },
+        }
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
+    async getAllMachineryJobRegistryByDate(date: string) {
+
+        const conditions = {
+            date: new Date(date),
         }
 
         return await this.getAllMachineryJobRegistry(conditions)

@@ -9,6 +9,8 @@ import { RoleModule } from '../role/role.module'
 import { MachineryJobRegistry, MachineryJobRegistrySchema } from './machineryJobRegistry.schema'
 import { MachineryFuelRegistry, MachineryFuelRegistrySchema } from './machineryFuelRegistry.schema'
 import { MachineryMaintenance, MachineryMaintenanceSchema } from './machineryMaintenance.schema'
+import { ClientModule } from '../client/client.module'
+import { CounterModule } from '../counter/counter.module'
 
 @Module( {
     imports: [
@@ -21,6 +23,8 @@ import { MachineryMaintenance, MachineryMaintenanceSchema } from './machineryMai
 
         UserModule,
         RoleModule,
+        ClientModule,
+        CounterModule,
         forwardRef( () => BookingModule),
     ],
 

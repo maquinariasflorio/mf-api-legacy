@@ -131,6 +131,10 @@ type EquipmentForInternalBookings {
   volume: Float
   maintenanceClass: MaintenanceMachineryClass
   workCondition: String
+  client: Client!
+  building: String!
+  operator: User!
+  address: String!
 }
 
 type EquipmentForExternalBookings {
@@ -138,6 +142,10 @@ type EquipmentForExternalBookings {
   type: String!
   minHours: Float!
   workCondition: String
+  client: Client!
+  building: String!
+  operator: String!
+  address: String!
 }
 
 type MachineryMaintenance {
@@ -168,13 +176,14 @@ type FullMaintenance {
 type FullMachineryJobRegistry {
   _id: String!
   executor: User!
-  equipment: Machinery!
+  equipment: Equipment!
+  operator: Operator!
   date: DateTime!
   startHourmeter: Float
   endHourmeter: Float
   totalHours: Float
-  client: Client
-  building: String
+  client: Client!
+  building: String!
   workCondition: AllowedWorkCondition
   bookingWorkCondition: AllowedWorkCondition
   load: String
@@ -183,6 +192,58 @@ type FullMachineryJobRegistry {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+  folio: Float!
+  address: String!
+}
+
+union Equipment = ExternalEquipment | InternalEquipment
+
+type ExternalEquipment {
+  name: String!
+}
+
+type InternalEquipment {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+}
+
+union Operator = ExternalOperator | InternalOperator
+
+type ExternalOperator {
+  name: String!
+}
+
+type InternalOperator {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  password: String!
+  isActive: Boolean!
+  role: String!
+  isSystemAdmin: Boolean!
+  signature: String
+}
+
+type FullMachineryFuelRegistry {
+  _id: String!
+  count: Float!
+  hourmeter: Float
+  guia: Float
+  type: String!
+  equipment: Equipment!
+  operator: Operator
+  date: DateTime!
+  time: String!
+  previousRegistry: String
 }
 
 type FullBooking {
@@ -228,10 +289,13 @@ type Query {
   getClient(client: String!): Client!
   getAllEquipments: [Machinery!]!
   getAllEquipmentsByBuilding(date: String!, user: String!): EquipmentsByBookingResultUnion!
+  getAllFuelRegistries(endDate: String!, startDate: String!): [FullMachineryFuelRegistry!]!
+  getAllPreviousFuelRegistries(equipments: [String!]!): [FullMachineryFuelRegistry!]!
   getAllLastMaintenance: [FullMaintenance!]!
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
   getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
   getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
@@ -439,6 +503,7 @@ input MachineryJobRegistryInput {
   _id: String
   date: String!
   equipment: String!
+  operator: String!
   startHourmeter: Float
   endHourmeter: Float
   totalHours: Float
@@ -452,6 +517,7 @@ input MachineryJobRegistryInput {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+  address: String!
 }
 
 union UpdateMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound
@@ -464,6 +530,7 @@ input UpdateMachineryJobRegistryInput {
   _id: String!
   date: String!
   equipment: String!
+  operator: String!
   startHourmeter: Float
   endHourmeter: Float
   totalHours: Float
@@ -477,6 +544,7 @@ input UpdateMachineryJobRegistryInput {
   observations: String
   signature: String
   machineryType: AllowedMachineryType
+  address: String!
   executor: String!
 }
 
@@ -496,11 +564,15 @@ input MachineryFuelRegistryInput {
   operator: String
   hourmeter: Float
   count: Float!
+  guia: Float
+  time: String!
+  previousRegistry: String
 }
 
 enum AllowedMachineryFuelType {
   RECHARGE
   BUY
+  RECHARGE_OTHERS
 }
 
 union CreateBookingResultUnion = Ok

@@ -13,6 +13,9 @@ export class MachineryJobRegistryInput {
     @Field()
     equipment: string;
 
+    @Field()
+    operator: string;
+
     @Field( { nullable: true } )
     startHourmeter?: number;
 
@@ -51,5 +54,8 @@ export class MachineryJobRegistryInput {
 
     @Field( () => AllowedMachineryType, { nullable: true } )
     machineryType?: AllowedMachineryType;
+
+    @Field()
+    address: string;
 
 }

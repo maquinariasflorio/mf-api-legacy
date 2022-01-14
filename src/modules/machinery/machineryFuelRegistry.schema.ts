@@ -5,6 +5,7 @@ import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose'
 export enum AllowedMachineryFuelType {
     RECHARGE = 'RECHARGE',
     BUY = 'BUY',
+    RECHARGE_OTHERS = 'RECHARGE_OTHERS',
 }
 
 registerEnumType(AllowedMachineryFuelType, {
@@ -44,6 +45,18 @@ export class MachineryFuelRegistry {
     @Field( () => Number)
     @Prop()
     count: number;
+
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    guia?: number;
+
+    @Field( () => String)
+    @Prop()
+    time: string;
+
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    previousRegistry?: string;
 
 }
 
