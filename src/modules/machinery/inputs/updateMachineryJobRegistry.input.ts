@@ -10,4 +10,7 @@ export class UpdateMachineryJobRegistryInput extends MachineryJobRegistryInput {
     @Field()
     executor: string;
 
+    @Field()
+    folio: number;
+
 }

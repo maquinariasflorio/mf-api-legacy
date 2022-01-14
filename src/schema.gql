@@ -280,6 +280,39 @@ type InternalMachine {
   workCondition: AllowedWorkCondition
 }
 
+type MachineryResume {
+  equipment: String!
+  building: String!
+  operator: String!
+  address: String!
+  startHourmeter: Float!
+  endHourmeter: Float!
+  totalHours: Float!
+  observations: String!
+}
+
+type TruckResume {
+  equipment: String!
+  operator: String!
+  volume: Float!
+  building: String!
+  address: String!
+  load: String!
+  totalTravels: Float!
+  workingDayType: String!
+  observations: String!
+}
+
+type DailyEquipmentsResume {
+  machinery: [MachineryResume!]!
+  trucks: [TruckResume!]!
+}
+
+type DailyReport {
+  intern: DailyEquipmentsResume!
+  extern: DailyEquipmentsResume!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
@@ -300,6 +333,7 @@ type Query {
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
+  getDailyResume(date: String!): DailyReport!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -546,6 +580,7 @@ input UpdateMachineryJobRegistryInput {
   machineryType: AllowedMachineryType
   address: String!
   executor: String!
+  folio: Float!
 }
 
 union DeleteMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound

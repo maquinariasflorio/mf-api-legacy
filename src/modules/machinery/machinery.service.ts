@@ -27,6 +27,7 @@ import { MachineryJobRegistryNotFound } from './results/machineryJobRegistryNotF
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
 import { ClientService } from '../client/client.service'
 import { CounterService } from '../counter/counter.service'
+import { AllowedWorkCondition } from '../booking/booking.schema'
 
 @Injectable()
 export class MachineryService {
@@ -296,8 +297,10 @@ export class MachineryService {
         
         const executor = await this.userService.findOneUser( { _id: new ObjectId(user) } )
 
+        const newMachineryJobRegistry = this.parseMachineryJobRegistry(machineryJobRegistry)
+
         const newJobRegistry = new this.machineryJobRegistryModel( {
-            ...machineryJobRegistry,
+            ...newMachineryJobRegistry,
             executor,
             equipment,
             client,
@@ -347,6 +350,37 @@ export class MachineryService {
     
     }
 
+    private parseMachineryJobRegistry(machineryJobRegistry: MachineryJobRegistryInput) {
+
+        let newInput = {
+            ...machineryJobRegistry,
+        }
+
+        if (machineryJobRegistry.machineryType === AllowedMachineryType.TRUCK && machineryJobRegistry.bookingWorkCondition === AllowedWorkCondition.BOTH) {
+
+            if (machineryJobRegistry.workCondition === AllowedWorkCondition.TRAVEL) {
+
+                newInput = {
+                    ...newInput,
+                    workingDayType: null,
+                }
+
+            }
+            else if (machineryJobRegistry.workCondition === AllowedWorkCondition.DAY) {
+
+                newInput = {
+                    ...newInput,
+                    totalTravels: 0,
+                }
+            
+            }
+
+        }
+
+        return newInput
+    
+    }
+
     async updateMachineryJobRegistry(machineryJobRegistry: UpdateMachineryJobRegistryInput) {
 
         const existJobRegistry = await this.machineryJobRegistryModel.findOne( { _id: new ObjectId(machineryJobRegistry._id) } )
@@ -360,9 +394,11 @@ export class MachineryService {
 
         const client = await this.clientService.findOneClient( { _id: new ObjectId(machineryJobRegistry.client) } )
             
+        const newMachineryJobRegistry = this.parseMachineryJobRegistry(machineryJobRegistry)
+
         await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
             $set: {
-                ...machineryJobRegistry,
+                ...newMachineryJobRegistry,
                 client,
             },
         } )
