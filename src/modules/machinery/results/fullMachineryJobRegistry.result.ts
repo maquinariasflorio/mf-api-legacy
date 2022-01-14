@@ -15,7 +15,7 @@ export class ExternalEquipment {
 @ObjectType()
 export class InternalEquipment extends Machinery {}
 
-const Equipment = createUnionType( {
+export const Equipment = createUnionType( {
     name        : "Equipment",
     types       : () => [ ExternalEquipment, InternalEquipment ],
     resolveType : (value) => {
@@ -39,7 +39,7 @@ export class ExternalOperator {
 @ObjectType()
 export class InternalOperator extends User {}
 
-const Operator = createUnionType( {
+export const Operator = createUnionType( {
     name        : "Operator",
     types       : () => [ ExternalOperator, InternalOperator ],
     resolveType : (value) => {

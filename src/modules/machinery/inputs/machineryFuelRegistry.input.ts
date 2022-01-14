@@ -28,4 +28,10 @@ export class MachineryFuelRegistryInput {
     @Field( { nullable: true } )
     guia?: number;
 
+    @Field()
+    time: string;
+
+    @Field( () => String, { nullable: true } )
+    previousRegistry?: string;
+
 }

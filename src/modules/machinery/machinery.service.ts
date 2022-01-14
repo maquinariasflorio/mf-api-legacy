@@ -53,7 +53,7 @@ export class MachineryService {
         private readonly bookingService: BookingService,
     ) {}
 
-    async findEquipment(conditions: Record<string, unknown>) {
+    async findEquipment(conditions?: Record<string, unknown>) {
 
         return await this.machineryModel.find(conditions).lean()
     
@@ -389,9 +389,23 @@ export class MachineryService {
         
         const session = await this.connection.startSession()
         session.startTransaction()
+
+        let previousRegistry = null
+        
+        if (isValidObjectId(machineryFuelRegistry.equipment) ) {
+
+            previousRegistry = await this.machineryFuelRegistryModel.find( {
+                equipment : machineryFuelRegistry.equipment,
+                date      : {
+                    $lt: new Date(machineryFuelRegistry.date),
+                },
+            } ).sort( { date: -1 } ).limit(1).lean()
+        
+        }
                 
         const newFuelRegistry = new this.machineryFuelRegistryModel( {
             ...machineryFuelRegistry,
+            previousRegistry: previousRegistry && previousRegistry[0] ? previousRegistry[0]._id.toString() : null,
         } )
         
         try {
@@ -416,6 +430,58 @@ export class MachineryService {
         
     }
 
+    async getAllFuelRegistries(startDate:string, endDate: string) {
+            
+        const registries = await this.machineryFuelRegistryModel.find( {
+            date: {
+                $gte : new Date(startDate),
+                $lte : new Date(endDate),
+            },
+        } )
+
+        const equipments = await this.findEquipment()
+        const operators = await this.userService.findUser()
+
+        return registries.map( (registry) => {
+                
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === registry.equipment)
+            const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
+
+            return {
+                ...registry.toJSON(),
+                equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
+                operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
+            }
+    
+        } )
+        
+    }
+
+    async getAllPreviousFuelRegistries(equipmentsId: string[] ) {
+            
+        const registries = await this.machineryFuelRegistryModel.find( {
+            _id: {
+                $in: equipmentsId,
+            },
+        } ).lean()
+
+        const equipments = await this.findEquipment()
+        const operators = await this.userService.findUser()
+
+        return registries.map( (registry) => {
+                
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === registry.equipment)
+            const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
+
+            return {
+                ...registry,
+                equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
+                operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
+            }
+    
+        } )
+        
+    }
 
     private readonly maintenanceMetadata = {
         CLASS_A : { every: 250, steps: [ 500, 1000, 2000 ] },

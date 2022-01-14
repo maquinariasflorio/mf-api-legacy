@@ -23,6 +23,8 @@ import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegi
 import { UpdateMachineryJobRegistryResultUnion } from './outputs/updateMachineryJobRegistry.output'
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
 import { DeleteMachineryJobRegistryResultUnion } from './outputs/deleteMachineryJobRegistry.output'
+import { MachineryFuelRegistry } from './machineryFuelRegistry.schema'
+import { FullMachineryFuelRegistry } from './results/fullMachineryFuelRegistry.result'
 
 @Resolver()
 export class MachineryResolver {
@@ -93,6 +95,20 @@ export class MachineryResolver {
     async createMachineryFuelRegistry(@Args('form') form: MachineryFuelRegistryInput) {
 
         return await this.machineryService.createMachineryFuelRegistry(form)
+    
+    }
+
+    @Query( () => [ FullMachineryFuelRegistry ] )
+    async getAllFuelRegistries(@Args('startDate') startDate: string, @Args('endDate') endDate: string) {
+
+        return await this.machineryService.getAllFuelRegistries(startDate, endDate)
+    
+    }
+
+    @Query( () => [ FullMachineryFuelRegistry ] )
+    async getAllPreviousFuelRegistries(@Args( { name: 'equipments', type: () => [ String ] } ) equipments: string[] ) {
+
+        return await this.machineryService.getAllPreviousFuelRegistries(equipments)
     
     }
 

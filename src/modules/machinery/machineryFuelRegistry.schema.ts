@@ -50,6 +50,14 @@ export class MachineryFuelRegistry {
     @Prop()
     guia?: number;
 
+    @Field( () => String)
+    @Prop()
+    time: string;
+
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    previousRegistry?: string;
+
 }
 
 export type MachineryFuelRegistryDocument = MachineryFuelRegistry & Document;

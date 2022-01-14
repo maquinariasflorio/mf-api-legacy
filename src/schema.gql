@@ -233,6 +233,19 @@ type InternalOperator {
   signature: String
 }
 
+type FullMachineryFuelRegistry {
+  _id: String!
+  count: Float!
+  hourmeter: Float
+  guia: Float
+  type: String!
+  equipment: Equipment!
+  operator: Operator
+  date: DateTime!
+  time: String!
+  previousRegistry: String
+}
+
 type FullBooking {
   _id: String!
   type: AllowedBookingType!
@@ -276,6 +289,8 @@ type Query {
   getClient(client: String!): Client!
   getAllEquipments: [Machinery!]!
   getAllEquipmentsByBuilding(date: String!, user: String!): EquipmentsByBookingResultUnion!
+  getAllFuelRegistries(endDate: String!, startDate: String!): [FullMachineryFuelRegistry!]!
+  getAllPreviousFuelRegistries(equipments: [String!]!): [FullMachineryFuelRegistry!]!
   getAllLastMaintenance: [FullMaintenance!]!
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
   getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
@@ -550,6 +565,8 @@ input MachineryFuelRegistryInput {
   hourmeter: Float
   count: Float!
   guia: Float
+  time: String!
+  previousRegistry: String
 }
 
 enum AllowedMachineryFuelType {
