@@ -549,11 +549,13 @@ input MachineryFuelRegistryInput {
   operator: String
   hourmeter: Float
   count: Float!
+  guia: Float
 }
 
 enum AllowedMachineryFuelType {
   RECHARGE
   BUY
+  RECHARGE_OTHERS
 }
 
 union CreateBookingResultUnion = Ok

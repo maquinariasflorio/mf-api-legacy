@@ -25,4 +25,7 @@ export class MachineryFuelRegistryInput {
     @Field()
     count: number;
 
+    @Field( { nullable: true } )
+    guia?: number;
+
 }
