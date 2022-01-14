@@ -26,7 +26,6 @@ import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegi
 import { MachineryJobRegistryNotFound } from './results/machineryJobRegistryNotFound.result'
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
 import { ClientService } from '../client/client.service'
-import { AllowedBookingType } from '../booking/booking.schema'
 import { CounterService } from '../counter/counter.service'
 
 @Injectable()
