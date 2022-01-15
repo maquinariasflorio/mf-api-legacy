@@ -12,7 +12,7 @@ jobs:
   build:
     name: Build Image
     runs-on: ubuntu-latest
-    environment: production
+    environment: Production
 
     steps:
       - name: Checkout
@@ -42,6 +42,7 @@ jobs:
     name: Deploy Image to Cloud Run
     runs-on: ${{ matrix.os }}
     needs: build
+    environment: Production
 
     strategy:
       matrix:
