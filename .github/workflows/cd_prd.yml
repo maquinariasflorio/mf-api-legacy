@@ -1,0 +1,77 @@
+name: cd
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  NODE_ENV: production
+
+jobs:
+  build:
+    name: Build Image
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      # Setup gcloud CLI
+      - uses: google-github-actions/setup-gcloud@master
+
+      # Build docker image
+      - name: Build Docker Image
+        run: |-
+          docker build -t us.gcr.io/${{ secrets.PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }} .
+      # Configure docker to use the gcloud command-line tool as a credential helper
+      - run: |
+          gcloud auth configure-docker -q
+      # Push image to Google Container Registry
+      - name: Push Docker Image to GCR
+        run: |-
+          docker push us.gcr.io/${{ secrets.PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
+
+  deploy:
+    name: Deploy Image to Cloud Run
+    runs-on: ${{ matrix.os }}
+    needs: build
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - id: "auth"
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      # extract branch name
+      - name: Extract branch name
+        shell: bash
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
+
+      - name: Deploy to Cloud Run
+        uses: "google-github-actions/deploy-cloudrun@main"
+        with:
+          image: us.gcr.io/${{ secrets.PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
+          service: ${{ secrets.SERVICE_NAME }}-${{ env.BRANCH_NAME }}
+          region: ${{ secrets.SERVICE_REGION }}
+          env_vars: |
+            NODE_ENV=${{ env.NODE_ENV }},
+            MONGO_URI=${{ secrets.MONGO_URI }},
+            JWT_TOKEN_SECRET=${{ secrets.JWT_TOKEN_SECRET }},
+            JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS=${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS }},
+            JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS }},
+            CHANGE_PASSWORD_TOKEN_EXPIRATION_TIME_IN_HOURS=${{ secrets.CHANGE_PASSWORD_TOKEN_EXPIRATION_TIME_IN_HOURS }},
+            SMTP_HOST=${{ secrets.SMTP_HOST }},
+            SMTP_PORT=${{ secrets.SMTP_PORT }},
+            SMTP_USER=${{ secrets.SMTP_USER }},
+            SMTP_USER_PASS=${{ secrets.SMTP_USER_PASS }}
