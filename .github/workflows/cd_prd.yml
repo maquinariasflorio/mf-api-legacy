@@ -42,6 +42,7 @@ jobs:
     name: Deploy Image to Cloud Run
     runs-on: ${{ matrix.os }}
     needs: build
+    environment: Production
 
     strategy:
       matrix:
