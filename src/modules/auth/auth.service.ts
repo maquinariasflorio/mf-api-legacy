@@ -14,6 +14,9 @@ import { NewPasswordInput } from './inputs/newPassword.input'
 import { TokenNotFound } from '../token/results/tokenNotFound.result'
 import { UserNotFound } from '../user/results/userNotFound.result'
 import { WrongChangePasswordCode } from './results/wrongChangePassCode.result'
+import { RoleService } from '../role/role.service'
+import { RoleNotFound } from '../role/results/roleNotFound.result'
+import { ViewService } from '../view/view.service'
 
 @Injectable()
 export class AuthService {
@@ -22,6 +25,8 @@ export class AuthService {
         private readonly mailerService: MailerService,
         private readonly userService: UserService,
         private readonly tokenService: TokenService,
+        private readonly roleService: RoleService,
+        private readonly viewService: ViewService,
     ) {}
 
     async login( { rut, password } ) {
@@ -78,12 +83,6 @@ export class AuthService {
     
     }
 
-    async logout(userId: string) {
-
-        await this.tokenService.deleteMany( { userId: new ObjectId(userId), type: TokenType.REFRESH } )
-    
-    }
-
     async generateChangePasswordAuthCode(form: RecoverCodeInput) {
 
         const user = await this.userService.findOneUser( { rut: form.rut } )
@@ -110,6 +109,7 @@ export class AuthService {
             from    : `"No Reply" <${process.env.SMTP_USER}>`,
             subject : 'Maquinarias Florio - Código de autorización para cambio de contraseña',
             text    : `Código de autorización para cambio de contraseña: ${token.code}`,
+            html    : `<p>Código de autorización para cambio de contraseña: ${token.code}</p>`,
         } )
             .then( () => {
 
@@ -164,8 +164,9 @@ export class AuthService {
         return await this.mailerService.sendMail( {
             to      : user.email.toLowerCase(),
             from    : `"No Reply" <${process.env.SMTP_USER}>`,
-            subject : 'Maquinarias Florio - Cambio de contraseña exitoso',
-            text    : `Contraseña actualizada exitosamente!`,
+            subject : 'Maquinarias Florio - Cambio de contraseña',
+            text    : '¡Cuidado! Su contraseña fue actualizada. Si usted no hizo esta operación, comuníquese de inmediato con su administrador.',
+            html    : `<p>¡Cuidado! Su contraseña fue actualizada. Si usted no hizo esta operación, comuníquese de inmediato con su administrador.</p>`,
         } )
             .then( () => {
 
@@ -179,10 +180,54 @@ export class AuthService {
 
     async getUser(id: string) {
 
-        const user = await this.userService.findOneUser( { _id: new ObjectId(id) } )
-        delete user.password
+        const user = await this.userService.findOneUser( { _id: new ObjectId(id) }, { password: false } )
+        const role = await this.roleService.findOneRole( { _id: user.role._id } )
 
-        return user
+        if (!role) {
+            
+            return new RoleNotFound( {
+                message: 'Role not found',
+            } )
+        
+        }
+
+        const views = await this.viewService.findView()
+
+        return {
+            ...user,
+            role,
+            views: this.getAllowedViews(views, role.allowedViews),
+        }
+    
+    }
+
+    getAllowedViews(views, allowedViews) {
+
+        const allowed = []
+
+        views.forEach( (view) => {
+
+            if (allowedViews.find(allowedView => allowedView.name === view.name) ) {
+
+                if (view.children) {
+
+                    allowed.push( {
+                        ...view,
+                        children: this.getAllowedViews(view.children, allowedViews),
+                    } )
+                
+                }
+                else {
+
+                    allowed.push(view)
+                
+                }
+            
+            }
+        
+        } )
+
+        return allowed
     
     }
 

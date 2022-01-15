@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+require('dotenv').config()
 import * as Joi from 'joi'
 import { join } from 'path'
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 import { GraphQLModule } from '@nestjs/graphql'
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { MongooseModule } from '@nestjs/mongoose'
+import { MONGO_URI, MONGO_OPTIONS } from '../mongo.config'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 
@@ -13,17 +16,25 @@ import { JwtAuthGuard } from './modules/auth/jwt_auth.guard'
 import { AuthModule } from './modules/auth/auth.module'
 import { TokenModule } from './modules/token/token.module'
 import { UserModule } from './modules/user/user.module'
+import { RoleModule } from './modules/role/role.module'
+import { ClientModule } from './modules/client/client.module'
+import { ViewModule } from './modules/view/view.module'
+import { MachineryModule } from './modules/machinery/machinery.module'
+import { BookingModule } from './modules/booking/booking.module'
+import { PubsubModule } from './modules/pubsub/pubsub.module'
+import { CounterModule } from './modules/counter/counter.module'
+import { ReportModule } from './modules/report/report.module'
 
 @Module( {
     imports: [
         ConfigModule.forRoot( {
             validationSchema: Joi.object( {
                 PORT                                           : Joi.number(),
-                DB_HOST                                        : Joi.string().required(),
-                DB_PORT                                        : Joi.number().required(),
-                DB_DATABASE                                    : Joi.string().required(),
-                DB_USERNAME                                    : Joi.string().required(),
-                DB_PASSWORD                                    : Joi.string().required(),
+                DB_HOST                                        : Joi.string(),
+                DB_PORT                                        : Joi.number(),
+                DB_DATABASE                                    : Joi.string(),
+                DB_USERNAME                                    : Joi.string(),
+                DB_PASSWORD                                    : Joi.string(),
                 JWT_TOKEN_SECRET                               : Joi.string().required(),
                 JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS      : Joi.number().required(),
                 JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS     : Joi.number().required(),
@@ -32,40 +43,31 @@ import { UserModule } from './modules/user/user.module'
                 SMTP_USER_PASS                                 : Joi.string().required(),
                 SMTP_HOST                                      : Joi.string().required(),
                 SMTP_PORT                                      : Joi.number().required(),
-                APP_URL                                        : Joi.string().required(),
             } ),
 
             isGlobal: true,
         } ),
 
         GraphQLModule.forRoot( {
-            autoSchemaFile : join(process.cwd(), 'src/schema.gql'),
-            context        : ( { req } ) => ( { req } ),
-            playground     : process.env.NODE_ENV !== 'production',
+            autoSchemaFile              : join(process.cwd(), 'src/schema.gql'),
+            context                     : ( { req } ) => ( { req } ),
+            playground                  : process.env.NODE_ENV !== 'production',
+            installSubscriptionHandlers : true,
+            subscriptions               : {
+                'subscriptions-transport-ws': {
+                    path      : '/graphql',
+                    onConnect : (connectionParams) => {
+
+                        return {
+                            ...connectionParams,
+                        }
+                    
+                    },
+                },
+            },
         } ),
 
-        TypeOrmModule.forRoot( {
-            type     : 'mongodb',
-            host     : process.env.DB_HOST,
-            port     : parseInt(process.env.DB_PORT),
-            database : process.env.DB_DATABASE,
-            username : process.env.DB_USERNAME,
-            password : process.env.DB_PASSWORD,
-            entities : [
-                join(__dirname, './**/*.entity{.ts,.js}'),
-            ],
-        
-            migrations: [
-                join(__dirname, './../migrations/*{.ts,.js}'),
-            ],
-        
-            migrationsRun      : true,
-            synchronize        : process.env.NODE_ENV !== 'production',
-            useNewUrlParser    : true,
-            logging            : true,
-            useUnifiedTopology : true,
-            authSource         : 'admin',
-        } ),
+        MongooseModule.forRoot(MONGO_URI, MONGO_OPTIONS),
 
         MailerModule.forRoot( {
             transport: {
@@ -73,10 +75,14 @@ import { UserModule } from './modules/user/user.module'
                 port       : Number(process.env.SMTP_PORT),
                 ignoreTLS  : false,
                 requireTLS : true,
-                secure     : true,
+                secure     : false,
                 auth       : {
                     user : process.env.SMTP_USER,
                     pass : process.env.SMTP_USER_PASS,
+                },
+
+                tls: {
+                    ciphers: 'SSLv3',
                 },
             },
 
@@ -97,6 +103,14 @@ import { UserModule } from './modules/user/user.module'
         AuthModule,
         TokenModule,
         UserModule,
+        RoleModule,
+        ViewModule,
+        ClientModule,
+        MachineryModule,
+        BookingModule,
+        PubsubModule,
+        CounterModule,
+        ReportModule,
     ],
 
     controllers : [],

@@ -2,8 +2,338 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Role {
+  _id: String!
+  name: String!
+  label: String!
+  initialView: String!
+}
+
+type User {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  password: String!
+  isActive: Boolean!
+  role: String!
+  isSystemAdmin: Boolean!
+  signature: String
+}
+
+type View {
+  _id: String!
+  name: String!
+  label: String!
+  icon: String!
+  children: [View!]!
+}
+
+type Loads {
+  type: String!
+  amount: Float!
+}
+
+type Billing {
+  name: String!
+  rut: String!
+  category: String!
+  address: String!
+  phone: String!
+  loads: [Loads!]!
+}
+
+type Client {
+  _id: String!
+  name: String!
+  paymentCondition: String!
+  receivers: [String!]!
+  billing: Billing!
+}
+
+type Machinery {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+}
+
+enum AllowedMachineryType {
+  TRUCK
+  PICKUP
+  OTHER
+}
+
+enum MaintenanceMachineryClass {
+  CLASS_A
+  CLASS_B
+}
+
+type BookingMachinery {
+  machineryType: AllowedMachineryType!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
+enum AllowedWorkCondition {
+  TRAVEL
+  DAY
+  BOTH
+}
+
+type BookingReceiver {
+  editable: Boolean!
+  email: String!
+}
+
+type Booking {
+  _id: String!
+  type: AllowedBookingType!
+  constructionManager: String
+  client: String!
+  machines: [BookingMachinery!]!
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiver!]!
+}
+
+enum AllowedBookingType {
+  INTERNAL
+  EXTERNAL
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type EquipmentForInternalBookings {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+  workCondition: String
+  client: Client!
+  building: String!
+  operator: User!
+  address: String!
+}
+
+type EquipmentForExternalBookings {
+  _id: String!
+  type: String!
+  minHours: Float!
+  workCondition: String
+  client: Client!
+  building: String!
+  operator: String!
+  address: String!
+}
+
+type MachineryMaintenance {
+  _id: String!
+  uid: Float!
+  equipment: String!
+  maintenanceClass: MaintenanceMachineryClass!
+  step: Float!
+  kmsOfMachinery: Float!
+  status: MaintenanceStatus
+}
+
+enum MaintenanceStatus {
+  PENDING
+  DONE
+}
+
+type FullMaintenance {
+  _id: String!
+  uid: Float!
+  equipment: Machinery!
+  maintenanceClass: MaintenanceMachineryClass!
+  step: Float!
+  kmsOfMachinery: Float!
+  status: MaintenanceStatus
+}
+
+type FullMachineryJobRegistry {
+  _id: String!
+  executor: User!
+  equipment: Equipment!
+  operator: Operator!
+  date: DateTime!
+  startHourmeter: Float
+  endHourmeter: Float
+  totalHours: Float
+  client: Client!
+  building: String!
+  workCondition: AllowedWorkCondition
+  bookingWorkCondition: AllowedWorkCondition
+  load: String
+  totalTravels: Float
+  workingDayType: String
+  observations: String
+  signature: String
+  machineryType: AllowedMachineryType
+  folio: Float!
+  address: String!
+}
+
+union Equipment = ExternalEquipment | InternalEquipment
+
+type ExternalEquipment {
+  name: String!
+}
+
+type InternalEquipment {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+}
+
+union Operator = ExternalOperator | InternalOperator
+
+type ExternalOperator {
+  name: String!
+}
+
+type InternalOperator {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  password: String!
+  isActive: Boolean!
+  role: String!
+  isSystemAdmin: Boolean!
+  signature: String
+}
+
+type FullMachineryFuelRegistry {
+  _id: String!
+  count: Float!
+  hourmeter: Float
+  guia: Float
+  type: String!
+  equipment: Equipment!
+  operator: Operator
+  date: DateTime!
+  time: String!
+  previousRegistry: String
+}
+
+type FullBooking {
+  _id: String!
+  type: AllowedBookingType!
+  constructionManager: String
+  client: String!
+  machines: [Machine!]!
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiver!]!
+}
+
+union Machine = ExternalMachine | InternalMachine
+
+type ExternalMachine {
+  machineryType: AllowedMachineryType!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
+type InternalMachine {
+  machineryType: AllowedMachineryType!
+  equipment: Machinery!
+  operator: User!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
+type MachineryResume {
+  equipment: String!
+  building: String!
+  operator: String!
+  address: String!
+  startHourmeter: Float!
+  endHourmeter: Float!
+  totalHours: Float!
+  observations: String!
+}
+
+type TruckResume {
+  equipment: String!
+  operator: String!
+  volume: Float!
+  building: String!
+  address: String!
+  load: String!
+  totalTravels: Float!
+  workingDayType: String!
+  observations: String!
+}
+
+type DailyEquipmentsResume {
+  machinery: [MachineryResume!]!
+  trucks: [TruckResume!]!
+}
+
+type DailyReport {
+  intern: DailyEquipmentsResume!
+  extern: DailyEquipmentsResume!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
+  getAllUsers: [User!]!
+  getAllUsersWithRoleName(role: String!): [User!]!
+  getAllRoles: [Role!]!
+  getAllClients: [Client!]!
+  getClient(client: String!): Client!
+  getAllEquipments: [Machinery!]!
+  getAllEquipmentsByBuilding(date: String!, user: String!): EquipmentsByBookingResultUnion!
+  getAllFuelRegistries(endDate: String!, startDate: String!): [FullMachineryFuelRegistry!]!
+  getAllPreviousFuelRegistries(equipments: [String!]!): [FullMachineryFuelRegistry!]!
+  getAllLastMaintenance: [FullMaintenance!]!
+  getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
+  getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
+  getAllBookings: [Booking!]!
+  getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
+  getUserNextJob(date: String!, user: String!): [Booking!]!
+  getBookingsByDate(date: String!): [FullBooking!]!
+  getDailyResume(date: String!): DailyReport!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -24,8 +354,35 @@ input RecoverCodeInput {
   rut: String!
 }
 
+union EquipmentsByBookingResultUnion = EquipmentsByBooking | ExternalEquipmentsByBooking
+
+type EquipmentsByBooking {
+  equipments: [EquipmentForInternalBookings!]!
+}
+
+type ExternalEquipmentsByBooking {
+  equipments: [EquipmentForExternalBookings!]!
+}
+
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
+  createUser(form: UserInput!): CreateUserResultUnion!
+  updateUser(form: UpdateUserInput!): UpdateUserResultUnion!
+  deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
+  createClient(form: ClientInput!): CreateClientResultUnion!
+  updateClient(form: UpdateClientInput!): UpdateClientResultUnion!
+  deleteClient(form: DeleteClientInput!): DeleteClientResultUnion!
+  createEquipment(form: EquipmentInput!): CreateEquipmentResultUnion!
+  updateEquipment(form: UpdateEquipmentInput!): UpdateEquipmentResultUnion!
+  deleteEquipment(form: DeleteEquipmentInput!): DeleteEquipmentResultUnion!
+  createMachineryJobRegistry(form: MachineryJobRegistryInput!): MachineryJobRegistryResultUnion!
+  updateMachineryJobRegistry(form: UpdateMachineryJobRegistryInput!): UpdateMachineryJobRegistryResultUnion!
+  deleteMachineryJobRegistry(form: DeleteMachineryJobRegistryInput!): DeleteMachineryJobRegistryResultUnion!
+  createMachineryFuelRegistry(form: MachineryFuelRegistryInput!): MachineryFuelRegistryResultUnion!
+  changeMaintenanceStatus(id: String!): MachineryMaintenance!
+  createBooking(form: BookingInput!): CreateBookingResultUnion!
+  updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
+  deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
 }
 
 union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
@@ -41,5 +398,275 @@ type WrongChangePasswordCode {
 input NewPasswordInput {
   rut: String!
   password: String!
+  confirmPassword: String!
   code: String!
+}
+
+union CreateUserResultUnion = Ok | UserAlreadyExists
+
+type UserAlreadyExists {
+  rut: String!
+}
+
+input UserInput {
+  _id: String
+  rut: String!
+  email: String!
+  name: String!
+  role: String!
+  signature: String
+}
+
+union UpdateUserResultUnion = Ok | UserNotFound | ImmutableUser
+
+type ImmutableUser {
+  _id: String!
+  rut: String!
+}
+
+input UpdateUserInput {
+  _id: String!
+  rut: String!
+  email: String!
+  name: String!
+  role: String!
+  signature: String
+}
+
+union DeleteUserResultUnion = Ok | UserNotFound | ImmutableUser
+
+input DeleteUserInput {
+  _id: String!
+}
+
+union CreateClientResultUnion = Ok
+
+input ClientInput {
+  _id: String
+  name: String!
+  paymentCondition: String!
+  receivers: [String!]!
+  billing: BillingInput!
+}
+
+input BillingInput {
+  name: String!
+  rut: String!
+  category: String!
+  address: String!
+  phone: String!
+  loads: [LoadsInput!]!
+}
+
+input LoadsInput {
+  type: String!
+  amount: Float!
+}
+
+union UpdateClientResultUnion = Ok | ClientNotFound
+
+type ClientNotFound {
+  message: String!
+}
+
+input UpdateClientInput {
+  _id: String!
+  name: String!
+  paymentCondition: String!
+  receivers: [String!]!
+  billing: BillingInput!
+}
+
+union DeleteClientResultUnion = Ok | ClientNotFound
+
+input DeleteClientInput {
+  _id: String!
+}
+
+union CreateEquipmentResultUnion = Ok | CodeAlreadyExists | PatentAlreadyExists
+
+type CodeAlreadyExists {
+  code: String!
+}
+
+type PatentAlreadyExists {
+  patent: String!
+}
+
+input EquipmentInput {
+  _id: String
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+}
+
+union UpdateEquipmentResultUnion = Ok | EquipmentNotFound | CodeAlreadyExists | PatentAlreadyExists
+
+type EquipmentNotFound {
+  message: String!
+}
+
+input UpdateEquipmentInput {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+}
+
+union DeleteEquipmentResultUnion = Ok | EquipmentNotFound
+
+input DeleteEquipmentInput {
+  _id: String!
+}
+
+union MachineryJobRegistryResultUnion = Ok
+
+input MachineryJobRegistryInput {
+  _id: String
+  date: String!
+  equipment: String!
+  operator: String!
+  startHourmeter: Float
+  endHourmeter: Float
+  totalHours: Float
+  client: String
+  building: String
+  workCondition: String
+  bookingWorkCondition: String
+  load: String
+  totalTravels: Float
+  workingDayType: String
+  observations: String
+  signature: String
+  machineryType: AllowedMachineryType
+  address: String!
+}
+
+union UpdateMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound
+
+type MachineryJobRegistryNotFound {
+  message: String!
+}
+
+input UpdateMachineryJobRegistryInput {
+  _id: String!
+  date: String!
+  equipment: String!
+  operator: String!
+  startHourmeter: Float
+  endHourmeter: Float
+  totalHours: Float
+  client: String
+  building: String
+  workCondition: String
+  bookingWorkCondition: String
+  load: String
+  totalTravels: Float
+  workingDayType: String
+  observations: String
+  signature: String
+  machineryType: AllowedMachineryType
+  address: String!
+  executor: String!
+  folio: Float!
+}
+
+union DeleteMachineryJobRegistryResultUnion = Ok | MachineryJobRegistryNotFound
+
+input DeleteMachineryJobRegistryInput {
+  _id: String!
+}
+
+union MachineryFuelRegistryResultUnion = Ok
+
+input MachineryFuelRegistryInput {
+  _id: String
+  date: String!
+  type: AllowedMachineryFuelType!
+  equipment: String
+  operator: String
+  hourmeter: Float
+  count: Float!
+  guia: Float
+  time: String!
+  previousRegistry: String
+}
+
+enum AllowedMachineryFuelType {
+  RECHARGE
+  BUY
+  RECHARGE_OTHERS
+}
+
+union CreateBookingResultUnion = Ok
+
+input BookingInput {
+  _id: String
+  type: AllowedBookingType!
+  constructionManager: String
+  client: String!
+  machines: [BookingMachineryInput!]!
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiverInput!]!
+}
+
+input BookingMachineryInput {
+  machineryType: AllowedMachineryType!
+  equipment: String!
+  operator: String!
+  minHours: Float
+  amountPerHour: Float
+  workCondition: AllowedWorkCondition
+}
+
+input BookingReceiverInput {
+  editable: Boolean!
+  email: String!
+}
+
+union UpdateBookingResultUnion = Ok | BookingNotFound
+
+type BookingNotFound {
+  message: String!
+}
+
+input UpdateBookingInput {
+  _id: String!
+  type: AllowedBookingType!
+  constructionManager: String
+  client: String!
+  machines: [BookingMachineryInput!]!
+  company: String
+  building: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  address: String!
+  receivers: [BookingReceiverInput!]!
+}
+
+union DeleteBookingResultUnion = Ok | BookingNotFound
+
+input DeleteBookingInput {
+  _id: String!
+}
+
+type Subscription {
+  maintenanceAdded: FullMaintenance!
+  maintenanceStatusUpdated: MachineryMaintenance!
 }

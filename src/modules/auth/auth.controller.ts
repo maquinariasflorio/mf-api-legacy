@@ -85,11 +85,10 @@ export class AuthController {
 	}
 
 	@Get('logout')
-    async logout(@Res() res, @Payload() payload) {
+    async logout(@Res() res) {
 
         try {
 
-            await this.authService.logout(payload.sub['userId'] )
             res.status(200).send()
         
         }

@@ -6,9 +6,9 @@ export class Ok {
     @Field( { nullable: true } )
     message?: string;
 
-    constructor( { message }: { message?: string } ) {
+    constructor(data?: { message?: string } ) {
 
-        this.message = message
+        this.message = data?.message
     
     }
 
