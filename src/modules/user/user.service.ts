@@ -130,8 +130,8 @@ export class UserService {
                 to      : user.email.toLowerCase(),
                 from    : `"No Reply" <${process.env.SMTP_USER}>`,
                 subject : 'Maquinarias Florio - Usuario creado',
-                text    : `Su usuario ha sido creado con éxito. Su contraseña es: ${newPassword}. Por su seguridad, recomendamos cambiarla al ingresar al sistema.`,
-                html    : `<p>Su usuario ha sido creado con éxito. Su contraseña es: <b>${newPassword}</b>. Por su seguridad, recomendamos cambiarla al ingresar al sistema.</p>`,
+                text    : `Su usuario ha sido creado con éxito. Su contraseña es: ${newPassword}.`,
+                html    : `<p>Su usuario ha sido creado con éxito. Su contraseña es: <b>${newPassword}</b>.</p>`,
             } )
                 .then(async () => {
     
