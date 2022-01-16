@@ -75,15 +75,13 @@ import { ReportModule } from './modules/report/report.module'
                 port       : Number(process.env.SMTP_PORT),
                 ignoreTLS  : false,
                 requireTLS : true,
-                secure     : false,
+                secure     : true,
                 auth       : {
                     user : process.env.SMTP_USER,
                     pass : process.env.SMTP_USER_PASS,
                 },
 
-                tls: {
-                    ciphers: 'SSLv3',
-                },
+                tls: { rejectUnauthorized: false },
             },
 
             defaults: {
