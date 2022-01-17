@@ -472,7 +472,7 @@ export class MachineryService {
                 $gte : new Date(startDate),
                 $lte : new Date(endDate),
             },
-        } )
+        } ).sort( { date: 1 } ).lean()
 
         const equipments = await this.findEquipment()
         const operators = await this.userService.findUser()
@@ -483,7 +483,7 @@ export class MachineryService {
             const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
 
             return {
-                ...registry.toJSON(),
+                ...registry,
                 equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
                 operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
             }
