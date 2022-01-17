@@ -340,6 +340,7 @@ type Query {
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
   getDailyResume(date: String!): DailyReport!
+  getDailyPayState(date: String!): DailyReport!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser

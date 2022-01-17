@@ -16,4 +16,11 @@ export class ReportResolver {
     
     }
 
+    @Query( () => DailyReport)
+    async getDailyPayState(@Args('date') date: string) {
+
+        return await this.reportService.getDailyPayState(date)
+    
+    }
+
 }

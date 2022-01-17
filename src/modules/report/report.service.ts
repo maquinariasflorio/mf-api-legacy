@@ -240,4 +240,14 @@ export class ReportService {
     
     }
 
+    async getDailyPayState(date: string) {
+
+        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry( {
+            "date"          : new Date(date),
+            "equipment._id" : { $exists: true },
+        } )
+
+
+    }
+
 }

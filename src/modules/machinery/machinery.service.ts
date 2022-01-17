@@ -641,17 +641,7 @@ export class MachineryService {
 
     async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
             
-        const jobRegistries = await this.machineryJobRegistryModel.find(conditions).lean()
-    
-        return jobRegistries.reduce( (acc, jobRegistry) => {
-            
-            acc.push( {
-                ...jobRegistry,
-            } )
-            
-            return acc
-                
-        }, [] )
+        return await this.machineryJobRegistryModel.find(conditions).lean()
         
     }
 
