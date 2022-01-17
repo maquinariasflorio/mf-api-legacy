@@ -82,6 +82,8 @@ type BookingMachinery {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
+  amountPertravel: Float
+  amountPerDay: Float
 }
 
 enum AllowedWorkCondition {
@@ -269,6 +271,8 @@ type ExternalMachine {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
+  amountPertravel: Float
+  amountPerDay: Float
 }
 
 type InternalMachine {
@@ -278,6 +282,8 @@ type InternalMachine {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
+  amountPertravel: Float
+  amountPerDay: Float
 }
 
 type MachineryResume {
@@ -633,6 +639,8 @@ input BookingMachineryInput {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
+  amountPertravel: Float
+  amountPerDay: Float
 }
 
 input BookingReceiverInput {
