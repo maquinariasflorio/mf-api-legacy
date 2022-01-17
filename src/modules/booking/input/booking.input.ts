@@ -26,6 +26,12 @@ export class BookingMachineryInput {
 
     @Field( () => AllowedWorkCondition, { nullable: true } )
     workCondition?: AllowedWorkCondition;
+
+    @Field( { nullable: true } )
+    amountPertravel?: number;
+
+    @Field( { nullable: true } )
+    amountPerDay?: number;
     
 }
 

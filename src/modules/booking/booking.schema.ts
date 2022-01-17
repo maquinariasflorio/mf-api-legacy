@@ -54,6 +54,14 @@ export class BookingMachinery {
     @Prop()
     workCondition?: AllowedWorkCondition;
 
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    amountPertravel?: number;
+
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    amountPerDay?: number;
+
 }
 
 @ObjectType()
