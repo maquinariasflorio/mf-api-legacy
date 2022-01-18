@@ -56,7 +56,7 @@ export class BookingMachinery {
 
     @Field( () => Number, { nullable: true } )
     @Prop()
-    amountPertravel?: number;
+    amountPerTravel?: number;
 
     @Field( () => Number, { nullable: true } )
     @Prop()
