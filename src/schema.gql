@@ -82,7 +82,7 @@ type BookingMachinery {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
 }
 
@@ -271,7 +271,7 @@ type ExternalMachine {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
 }
 
@@ -282,7 +282,7 @@ type InternalMachine {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
 }
 
@@ -319,6 +319,19 @@ type DailyReport {
   extern: DailyEquipmentsResume!
 }
 
+type DailyPayStateReport {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  amountPerUse: Float!
+  amounType: String!
+  hours: Float!
+  minHours: Float!
+  toFacture: Float!
+  totalAmount: Float!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
@@ -340,6 +353,7 @@ type Query {
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
   getDailyResume(date: String!): DailyReport!
+  getDailyPayState(date: String!): [DailyPayStateReport!]!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -639,7 +653,7 @@ input BookingMachineryInput {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
 }
 

@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { ObjectId } from 'mongodb'
+import { AllowedWorkCondition } from '../booking/booking.schema'
 import { BookingService } from '../booking/booking.service'
 import { ClientService } from '../client/client.service'
+import { AllowedMachineryType } from '../machinery/machinery.schema'
 import { MachineryService } from '../machinery/machinery.service'
+import { MachineryJobRegistry } from '../machinery/machineryJobRegistry.schema'
 import { UserService } from '../user/user.service'
 import { DailyReport } from './results/daily.result'
+import { DailyPayStateReport } from './results/dailyPayStateReport.result'
 
 @Injectable()
 export class ReportService {
@@ -237,6 +241,116 @@ export class ReportService {
         }
 
         return dailyReport
+    
+    }
+
+    async getDailyPayState(date: string) {
+
+        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry( {
+            "date"          : new Date(date),
+            "equipment._id" : { $exists: true },
+        } )
+
+        const clientIds = jobRegistries.map( (jobRegistry) => jobRegistry.client._id)
+        
+        const bookings = await this.bookingService.findBooking( {
+            client    : { $in: clientIds },
+            startDate : { $lte: new Date(date) },
+            endDate   : { $gte: new Date(date) },
+        } )
+
+        const groupedJobRegistries = jobRegistries.reduce( (acc, item) => {
+
+            const equipment = typeof item.equipment === 'string' ? item.equipment : item.equipment._id.toString()
+
+            const key = item.machineryType === AllowedMachineryType.OTHER ? `${equipment}-${item.client._id}-${item.building}` : item._id.toString()
+
+            if (!acc[key] )
+                acc[key] = []
+
+            acc[key].push(item)
+
+            return acc
+
+        }, {} )
+
+        const resume = []
+
+        for (const registries of Object.values(groupedJobRegistries) ) {
+
+            const item = registries[0]
+            const equipment = typeof item.equipment._id ? item.equipment._id.toString() : item.equipment.name
+            const hours = (registries as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalHours || 0), 0)
+
+            const booking = bookings.find( (booking) => {
+
+                return booking.machines.find( (machine) => machine.equipment.toString() === equipment)
+            
+            } )
+
+            const bookingMachine = booking ? booking.machines.find( (machine) => {
+
+                const equipment = typeof item.equipment._id ? item.equipment._id.toString() : item.equipment.name
+
+                return machine.equipment.toString() === equipment
+
+            } ) : null
+            
+            let amountPerUse = 0
+            let amounType = ''
+            const minHours = bookingMachine ? (bookingMachine.minHours || 0) : 0
+            let toFacture = Math.max(hours, minHours)
+
+            if (item.machineryType === AllowedMachineryType.OTHER) {
+
+                amountPerUse = bookingMachine ? (bookingMachine.amountPerHour || 0) : 0
+                amounType = 'por Hora'
+            
+            }
+            else if (item.machineryType === AllowedMachineryType.TRUCK) {
+
+                let workCondition = item.bookingWorkCondition
+
+                if (item.bookingWorkCondition === 'BOTH')
+                    workCondition = item.workCondition
+
+                if (workCondition === AllowedWorkCondition.DAY) {
+
+                    amountPerUse = bookingMachine ? (bookingMachine.amountPerDay || 0) : 0
+                    amounType = 'por Jornada'
+
+                    if (item.workingDayType === 'FULL')
+                        toFacture = 1
+                    else if (item.workingDayType === 'HALF')
+                        toFacture = 0.5
+                
+                }
+                else if (workCondition === AllowedWorkCondition.TRAVEL) {
+
+                    amountPerUse = bookingMachine ? (bookingMachine.amountPerTravel || 0) : 0
+                    amounType = 'por Viaje'
+                    toFacture = item.totalTravels || 0
+                
+                }
+            
+            }
+
+            resume.push( ( {
+                client      : item.client,
+                building    : item.building,
+                operator    : item.operator,
+                equipment   : item.equipment,
+                amountPerUse,
+                amounType,
+                hours,
+                minHours,
+                toFacture,
+                totalAmount : toFacture * amountPerUse,
+            } as DailyPayStateReport) )
+        
+        }
+
+        return resume
     
     }
 
