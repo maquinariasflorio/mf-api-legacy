@@ -286,6 +286,40 @@ type InternalMachine {
   amountPerDay: Float
 }
 
+type PayStateFilterBuilding {
+  clientId: String!
+  name: String!
+}
+
+type PayStateFilters {
+  clients: [Client!]!
+  buildings: [PayStateFilterBuilding!]!
+  equipments: [PayStateFilterMachine!]!
+}
+
+union PayStateFilterMachine = PayStateFilterExternalMachine | PayStateFilterInternalMachine
+
+type PayStateFilterExternalMachine {
+  name: String!
+  fromBuilding: [String!]!
+  fromClient: [String!]!
+}
+
+type PayStateFilterInternalMachine {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+  fromBuilding: [String!]!
+  fromClient: [String!]!
+}
+
 type MachineryResume {
   equipment: String!
   building: String!
@@ -332,6 +366,46 @@ type DailyPayStateReport {
   totalAmount: Float!
 }
 
+type GeneralPayStateMachinery {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  amountPerUse: Float!
+  hours: Float!
+  minHours: Float!
+  toFacture: Float!
+  totalAmount: Float!
+  date: DateTime!
+  folio: String!
+}
+
+type GeneralPayStateTruck {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  volume: Float!
+  load: String!
+  totalTravels: Float!
+  workingDayType: String!
+  totalAmount: Float!
+  amountPerUse: Float!
+  workCondition: AllowedWorkCondition!
+  date: DateTime!
+  folio: String!
+}
+
+type GeneralPayStateEquipments {
+  OTHER: [GeneralPayStateMachinery!]!
+  TRUCK: [GeneralPayStateTruck!]!
+}
+
+type GeneralPayStateReport {
+  intern: GeneralPayStateEquipments!
+  extern: GeneralPayStateEquipments!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
@@ -352,8 +426,10 @@ type Query {
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
+  getBookingsForPayStates(endDate: String!, startDate: String!): PayStateFilters!
   getDailyResume(date: String!): DailyReport!
   getDailyPayState(date: String!): [DailyPayStateReport!]!
+  getEquipmentPayState(filters: PayStatesFilter!): GeneralPayStateReport!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -382,6 +458,14 @@ type EquipmentsByBooking {
 
 type ExternalEquipmentsByBooking {
   equipments: [EquipmentForExternalBookings!]!
+}
+
+input PayStatesFilter {
+  startDate: String!
+  endDate: String!
+  client: String
+  building: String
+  equipment: String
 }
 
 type Mutation {

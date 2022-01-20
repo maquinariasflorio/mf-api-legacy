@@ -13,6 +13,8 @@ import { RoleService } from '../role/role.service'
 import { UserService } from '../user/user.service'
 import { isValidObjectId } from 'src/helpers/objectIdValidator'
 import { MachineryService } from '../machinery/machinery.service'
+import { ClientService } from '../client/client.service'
+import { PayStateFilters } from './results/payStateFilters.result'
 
 @Injectable()
 export class BookingService {
@@ -24,6 +26,7 @@ export class BookingService {
         private readonly connection: mongoose.Connection,
         private readonly userService: UserService,
         private readonly roleService: RoleService,
+        private readonly clientService: ClientService,
         @Inject(forwardRef( () => MachineryService) )
         private readonly machineryService: MachineryService,
     ) {}
@@ -271,6 +274,90 @@ export class BookingService {
         }
     
         return bookings
+        
+    }
+
+    async getBookingsForPayStates(startDate, endDate) {
+            
+        const bookings = await this.findBooking( {
+            startDate : { $lte: new Date(endDate) },
+            endDate   : { $gte: new Date(startDate) },
+        } )
+
+        const clients = {}
+        const buildings = {}
+        const equipments = {}
+
+
+        for (const booking of bookings) {
+
+            const client = clients[booking.client.toString()] ? clients[booking.client.toString()] : await this.clientService.findOneClient( { _id: booking.client } )
+            clients[booking.client.toString()] = client
+
+            if (!buildings[client._id.toString()] )
+                buildings[client._id.toString()] = []
+
+            buildings[client._id.toString()].push(booking.building)
+        
+            for (const machine of booking.machines) {
+
+                if (booking.type === AllowedBookingType.INTERNAL) {
+
+                    if (!equipments[machine.equipment.toString()] ) {
+
+                        const equipment = await this.machineryService.findOneEquipment( { _id: machine.equipment } )
+
+                        equipments[machine.equipment.toString()] = {
+                            ...equipment,
+                            fromBuilding : [],
+                            fromClient   : [],
+                        }
+                    
+                    }
+
+                }
+                else {
+
+                    if (!equipments[machine.equipment.toString()] ) {
+
+                        const equipment = machine.equipment.toString()
+
+                        equipments[machine.equipment.toString()] = {
+                            name         : equipment,
+                            fromBuilding : [],
+                            fromClient   : [],
+                        }
+                    
+                    }
+                
+                }
+
+                equipments[machine.equipment.toString()].fromBuilding.push(booking.building)
+                equipments[machine.equipment.toString()].fromClient.push(client._id.toString() )
+    
+            }
+        
+        }
+
+        const parsedBuildings = []
+        Object.entries(buildings).forEach( ( [ clientId, buildings ] ) => {
+                     
+            for (const building of (buildings as string[] ) ) {
+
+                parsedBuildings.push( {
+                    clientId,
+                    name: building,
+                } )
+            
+            }
+        
+        } )
+
+        return ( {
+            clients    : Object.values(clients),
+            buildings  : parsedBuildings,
+            equipments : Object.values(equipments),
+        } as PayStateFilters)
         
     }
 

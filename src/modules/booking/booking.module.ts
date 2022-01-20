@@ -6,6 +6,7 @@ import { Booking, BookingSchema } from './booking.schema'
 import { UserModule } from '../user/user.module'
 import { RoleModule } from '../role/role.module'
 import { MachineryModule } from '../machinery/machinery.module'
+import { ClientModule } from '../client/client.module'
 
 @Module( {
     imports: [
@@ -13,6 +14,7 @@ import { MachineryModule } from '../machinery/machinery.module'
 
         UserModule,
         RoleModule,
+        ClientModule,
         forwardRef( () => MachineryModule),
     ],
 

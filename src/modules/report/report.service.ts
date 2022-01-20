@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ObjectId } from 'mongodb'
+import { isValidObjectId } from 'src/helpers/objectIdValidator'
 import { AllowedWorkCondition } from '../booking/booking.schema'
 import { BookingService } from '../booking/booking.service'
 import { ClientService } from '../client/client.service'
@@ -7,8 +8,10 @@ import { AllowedMachineryType } from '../machinery/machinery.schema'
 import { MachineryService } from '../machinery/machinery.service'
 import { MachineryJobRegistry } from '../machinery/machineryJobRegistry.schema'
 import { UserService } from '../user/user.service'
+import { PayStatesFilter } from './inputs/payStatesFilter.input'
 import { DailyReport } from './results/daily.result'
 import { DailyPayStateReport } from './results/dailyPayStateReport.result'
+import { GeneralPayStateMachinery, GeneralPayStateReport, GeneralPayStateTruck } from './results/generalPayStateReport.result'
 
 @Injectable()
 export class ReportService {
@@ -261,7 +264,7 @@ export class ReportService {
 
         const groupedJobRegistries = jobRegistries.reduce( (acc, item) => {
 
-            const equipment = typeof item.equipment === 'string' ? item.equipment : item.equipment._id.toString()
+            const equipment = item.equipment._id ? item.equipment._id.toString() : item.equipment.name
 
             const key = item.machineryType === AllowedMachineryType.OTHER ? `${equipment}-${item.client._id}-${item.building}` : item._id.toString()
 
@@ -279,7 +282,7 @@ export class ReportService {
         for (const registries of Object.values(groupedJobRegistries) ) {
 
             const item = registries[0]
-            const equipment = typeof item.equipment._id ? item.equipment._id.toString() : item.equipment.name
+            const equipment = item.equipment._id ? item.equipment._id.toString() : item.equipment.name
             const hours = (registries as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalHours || 0), 0)
 
             const booking = bookings.find( (booking) => {
@@ -290,7 +293,7 @@ export class ReportService {
 
             const bookingMachine = booking ? booking.machines.find( (machine) => {
 
-                const equipment = typeof item.equipment._id ? item.equipment._id.toString() : item.equipment.name
+                const equipment = item.equipment._id ? item.equipment._id.toString() : item.equipment.name
 
                 return machine.equipment.toString() === equipment
 
@@ -351,6 +354,230 @@ export class ReportService {
         }
 
         return resume
+    
+    }
+
+    async getEquipmentPayState(filters: PayStatesFilter) {
+
+        const conditions = {
+            "date": {
+                $gte : new Date(filters.startDate),
+                $lte : new Date(filters.endDate),
+            },
+
+            "client._id": new ObjectId(filters.client),
+        }
+
+        if (filters.building)
+            conditions['building'] = filters.building
+
+        if (isValidObjectId(filters.equipment) )
+            conditions['equipment._id'] = new ObjectId(filters.equipment)
+        else if (filters.equipment)
+            conditions['equipment.name'] = filters.equipment
+        
+        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry(conditions)
+
+        const groupedJobRegistries = {
+            OTHER : {},
+            TRUCK : {},
+        }
+        
+        jobRegistries.forEach( (item) => {
+
+            const equipment = !item.equipment._id ? item.equipment : item.equipment._id.toString()
+            const date = item.date.toISOString().split('T')[0]
+            const truckWorkCondition = item.bookingWorkCondition === AllowedWorkCondition.BOTH ? item.workCondition : item.bookingWorkCondition
+
+            const key = item.machineryType === AllowedMachineryType.OTHER
+                ? `${equipment}-${item.client._id}-${item.building}-${date}`
+                : `${equipment}-${item.client._id}-${item.building}-${date}-${truckWorkCondition}-${item.load}`
+
+            if (!groupedJobRegistries[item.machineryType][key] )
+                groupedJobRegistries[item.machineryType][key] = []
+
+            groupedJobRegistries[item.machineryType][key].push(item)
+
+        } )
+
+
+        const result = ( {
+            intern: {
+                OTHER : [],
+                TRUCK : [],
+            },
+
+            extern: {
+                OTHER : [],
+                TRUCK : [],
+            },
+        } as GeneralPayStateReport)
+
+        // adding OTHER registries
+
+        for (const jobs of Object.values(groupedJobRegistries.OTHER) ) {
+
+            const job = jobs[0]
+            const isInternal = job.equipment._id ? true : false
+
+            // geting booking for jobRegistry
+
+            const { bookingMachine } = await this.getBookingForJobRegistry( {
+                client: filters.client,
+                job,
+                isInternal,
+            } )
+
+            // calculating use
+
+            const amountPerUse = bookingMachine ? (bookingMachine.amountPerHour || 0) : 0
+            const minHours = bookingMachine ? (bookingMachine.minHours || 0) : 0
+            const hours = (jobs as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalHours || 0), 0)
+            const toFacture = Math.max(hours, minHours)
+            const folio = (jobs as MachineryJobRegistry[] ).slice(1, (jobs as MachineryJobRegistry[] ).length).reduce( (acc, item) => item.folio ? `${acc}, ${item.folio}` : acc, jobs[0].folio || '')
+        
+            const record = ( {
+                client      : job.client,
+                date        : job.date,
+                building    : job.building,
+                operator    : job.operator,
+                equipment   : job.equipment,
+                amountPerUse,
+                hours,
+                minHours,
+                toFacture,
+                totalAmount : toFacture * amountPerUse,
+                folio,
+            } as GeneralPayStateMachinery)
+        
+            result[isInternal ? 'intern' : 'extern'].OTHER.push(record)
+        
+        }
+
+
+        // adding TRUCK registries
+
+        for (const jobs of Object.values(groupedJobRegistries.TRUCK) ) {
+
+            const job = jobs[0]
+            const isInternal = job.equipment._id ? true : false
+
+            // geting booking for jobRegistry
+
+            const { bookingMachine } = await this.getBookingForJobRegistry( {
+                client: filters.client,
+                job,
+                isInternal,
+            } )
+
+            // calculating use
+
+            const workCondition = job.bookingWorkCondition === AllowedWorkCondition.BOTH ? job.workCondition : job.bookingWorkCondition
+
+            if (workCondition === AllowedWorkCondition.DAY) {
+
+                for (const item of jobs as MachineryJobRegistry[] ) {
+
+                    const amountPerDay = bookingMachine.amountPerDay || 0
+
+                    const record = ( {
+                        client         : item.client,
+                        date           : item.date,
+                        building       : item.building,
+                        operator       : item.operator,
+                        equipment      : item.equipment,
+                        amountPerUse   : amountPerDay,
+                        load           : item.load,
+                        totalTravels   : 0,
+                        volume         : item.equipment.volume || 0,
+                        workingDayType : item.workingDayType === 'FULL' ? 'COMPLETA' : (item.workingDayType === 'HALF' ? 'MEDIA' : ''),
+                        totalAmount    : item.workingDayType === 'FULL' ? amountPerDay : (item.workingDayType === 'HALF' ? (amountPerDay / 2) : 0),
+                        workCondition,
+                        folio          : item.folio.toString(),
+                    } as GeneralPayStateTruck)
+
+                    result[isInternal ? 'intern' : 'extern'].TRUCK.push(record)
+                
+                }
+            
+            }
+            else if (workCondition === AllowedWorkCondition.TRAVEL) {
+
+                const amountPerTravel = bookingMachine.amountPerTravel || 0
+                const travels = (jobs as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalTravels || 0), 0)
+                const folio = (jobs as MachineryJobRegistry[] ).slice(1, (jobs as MachineryJobRegistry[] ).length).reduce( (acc, item) => item.folio ? `${acc}, ${item.folio}` : acc, jobs[0].folio || '')
+
+                const record = ( {
+                    client         : job.client,
+                    date           : job.date,
+                    building       : job.building,
+                    operator       : job.operator,
+                    equipment      : job.equipment,
+                    amountPerUse   : amountPerTravel,
+                    load           : job.load,
+                    totalTravels   : travels,
+                    volume         : job.equipment.volume || 0,
+                    workingDayType : '',
+                    totalAmount    : travels * amountPerTravel,
+                    workCondition,
+                    folio,
+                } as GeneralPayStateTruck)
+
+                result[isInternal ? 'intern' : 'extern'].TRUCK.push(record)
+            
+            }
+        
+        }
+    
+        return result
+    
+    }
+
+    private async getBookingForJobRegistry( {
+        client,
+        job,
+        isInternal,
+    } ) {
+
+        const bookingConditions = {
+            client    : new ObjectId(client),
+            startDate : { $lte: job.date },
+            endDate   : { $gte: job.date },
+            building  : job.building,
+        }
+
+        if (isInternal) {
+
+            bookingConditions['machines'] = {
+                $elemMatch: {
+                    equipment: job.equipment._id,
+                },
+            }
+
+        }
+        else {
+
+            bookingConditions['machines'] = {
+                $elemMatch: {
+                    equipment: job.equipment.name,
+                },
+            }
+
+        }
+
+        const booking = await this.bookingService.findOneBooking(bookingConditions)
+        const bookingMachine = booking ? booking.machines.find( (machine) => {
+
+            const equipment = isInternal ? job.equipment._id.toString() : job.equipment.name
+
+            return machine.equipment.toString() === equipment
+
+        } ) : null
+
+        return {
+            booking,
+            bookingMachine,
+        }
     
     }
 
