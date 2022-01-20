@@ -84,6 +84,7 @@ type BookingMachinery {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 enum AllowedWorkCondition {
@@ -273,6 +274,7 @@ type ExternalMachine {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 type InternalMachine {
@@ -284,6 +286,7 @@ type InternalMachine {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 type PayStateFilterBuilding {
@@ -739,6 +742,7 @@ input BookingMachineryInput {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 input BookingReceiverInput {

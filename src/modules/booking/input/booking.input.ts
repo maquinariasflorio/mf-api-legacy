@@ -32,6 +32,9 @@ export class BookingMachineryInput {
 
     @Field( { nullable: true } )
     amountPerDay?: number;
+
+    @Field( { nullable: true } )
+    volume?: number;
     
 }
 

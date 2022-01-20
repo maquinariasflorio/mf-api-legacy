@@ -62,6 +62,10 @@ export class BookingMachinery {
     @Prop()
     amountPerDay?: number;
 
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    volume?: number;
+
 }
 
 @ObjectType()
