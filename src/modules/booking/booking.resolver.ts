@@ -8,6 +8,7 @@ import { CreateBookingResultUnion } from './outputs/createBooking.output'
 import { DeleteBookingResultUnion } from './outputs/deleteBooking.output'
 import { UpdateBookingResultUnion } from './outputs/updateBooking.output'
 import { FullBooking } from './results/booking.result'
+import { PayStateFilters } from './results/payStateFilters.result'
 
 @Resolver()
 export class BookingResolver {
@@ -60,6 +61,13 @@ export class BookingResolver {
     async getBookingsByDate(@Args('date') date: string) {
 
         return await this.bookingService.getBookingsByDate(date)
+    
+    }
+
+    @Query( () => PayStateFilters)
+    async getBookingsForPayStates(@Args('startDate') startDate: string, @Args('endDate') endDate: string) {
+
+        return await this.bookingService.getBookingsForPayStates(startDate, endDate)
     
     }
 

@@ -84,6 +84,7 @@ type BookingMachinery {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 enum AllowedWorkCondition {
@@ -273,6 +274,7 @@ type ExternalMachine {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 type InternalMachine {
@@ -284,6 +286,41 @@ type InternalMachine {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
+}
+
+type PayStateFilterBuilding {
+  clientId: String!
+  name: String!
+}
+
+type PayStateFilters {
+  clients: [Client!]!
+  buildings: [PayStateFilterBuilding!]!
+  equipments: [PayStateFilterMachine!]!
+}
+
+union PayStateFilterMachine = PayStateFilterExternalMachine | PayStateFilterInternalMachine
+
+type PayStateFilterExternalMachine {
+  name: String!
+  fromBuilding: [String!]!
+  fromClient: [String!]!
+}
+
+type PayStateFilterInternalMachine {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+  fromBuilding: [String!]!
+  fromClient: [String!]!
 }
 
 type MachineryResume {
@@ -332,6 +369,46 @@ type DailyPayStateReport {
   totalAmount: Float!
 }
 
+type GeneralPayStateMachinery {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  amountPerUse: Float!
+  hours: Float!
+  minHours: Float!
+  toFacture: Float!
+  totalAmount: Float!
+  date: DateTime!
+  folio: String!
+}
+
+type GeneralPayStateTruck {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  volume: Float!
+  load: String!
+  totalTravels: Float!
+  workingDayType: String!
+  totalAmount: Float!
+  amountPerUse: Float!
+  workCondition: AllowedWorkCondition!
+  date: DateTime!
+  folio: String!
+}
+
+type GeneralPayStateEquipments {
+  OTHER: [GeneralPayStateMachinery!]!
+  TRUCK: [GeneralPayStateTruck!]!
+}
+
+type GeneralPayStateReport {
+  intern: GeneralPayStateEquipments!
+  extern: GeneralPayStateEquipments!
+}
+
 type Query {
   getRecoverCode(form: RecoverCodeInput!): RecoverCodeResultUnion!
   getAllUsers: [User!]!
@@ -352,8 +429,10 @@ type Query {
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
+  getBookingsForPayStates(endDate: String!, startDate: String!): PayStateFilters!
   getDailyResume(date: String!): DailyReport!
   getDailyPayState(date: String!): [DailyPayStateReport!]!
+  getEquipmentPayState(filters: PayStatesFilter!): GeneralPayStateReport!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
@@ -382,6 +461,14 @@ type EquipmentsByBooking {
 
 type ExternalEquipmentsByBooking {
   equipments: [EquipmentForExternalBookings!]!
+}
+
+input PayStatesFilter {
+  startDate: String!
+  endDate: String!
+  client: String
+  building: String
+  equipment: String
 }
 
 type Mutation {
@@ -655,6 +742,7 @@ input BookingMachineryInput {
   workCondition: AllowedWorkCondition
   amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
 }
 
 input BookingReceiverInput {
