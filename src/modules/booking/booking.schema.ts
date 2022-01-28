@@ -66,6 +66,16 @@ export class BookingMachinery {
     @Prop()
     volume?: number;
 
+    // LOADS
+
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    load?: string;
+
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    origin?: string;
+
 }
 
 @ObjectType()

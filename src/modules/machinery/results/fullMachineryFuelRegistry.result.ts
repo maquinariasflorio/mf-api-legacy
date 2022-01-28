@@ -1,4 +1,5 @@
 import { ObjectType, Field } from '@nestjs/graphql'
+import { User } from 'src/modules/user/user.schema'
 import { Equipment, Operator } from './fullMachineryJobRegistry.result'
 
 @ObjectType()
@@ -33,5 +34,8 @@ export class FullMachineryFuelRegistry {
 
     @Field( () => String, { nullable: true } )
     previousRegistry?: string;
+
+    @Field( () => User, { nullable: true } )
+    executor?: User;
 
 }

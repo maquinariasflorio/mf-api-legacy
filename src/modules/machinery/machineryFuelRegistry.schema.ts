@@ -1,6 +1,7 @@
 import { ObjectType, Field, registerEnumType } from '@nestjs/graphql'
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose'
+import { User } from '../user/user.schema'
 
 export enum AllowedMachineryFuelType {
     RECHARGE = 'RECHARGE',
@@ -57,6 +58,10 @@ export class MachineryFuelRegistry {
     @Field( () => String, { nullable: true } )
     @Prop()
     previousRegistry?: string;
+
+    @Field( () => User, { nullable: true } )
+    @Prop( { type: MongooseSchema.Types.Mixed } )
+    executor?: User;
 
 }
 

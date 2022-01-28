@@ -24,6 +24,8 @@ import { UpdateMachineryJobRegistryResultUnion } from './outputs/updateMachinery
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
 import { DeleteMachineryJobRegistryResultUnion } from './outputs/deleteMachineryJobRegistry.output'
 import { FullMachineryFuelRegistry } from './results/fullMachineryFuelRegistry.result'
+import { DeleteMachineryFuelRegistryResultUnion } from './outputs/deleteMachineryFuelRegistry.output'
+import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
 
 @Resolver()
 export class MachineryResolver {
@@ -91,9 +93,9 @@ export class MachineryResolver {
     }
 
     @Mutation( () => MachineryFuelRegistryResultUnion)
-    async createMachineryFuelRegistry(@Args('form') form: MachineryFuelRegistryInput) {
+    async createMachineryFuelRegistry(@Args('form') form: MachineryFuelRegistryInput, @CurrentUser() user: string) {
 
-        return await this.machineryService.createMachineryFuelRegistry(form)
+        return await this.machineryService.createMachineryFuelRegistry(form, user)
     
     }
 
@@ -167,9 +169,37 @@ export class MachineryResolver {
     }
 
     @Query( () => [ FullMachineryJobRegistry ] )
+    async getAllMachineryJobRegistryByUser(@Args( { nullable: true, name: 'user' } ) user: string) {
+
+        return await this.machineryService.getAllMachineryJobRegistryByUser(user)
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
     async getAllMachineryJobRegistryByDate(@Args('date') date: string) {
 
         return await this.machineryService.getAllMachineryJobRegistryByDate(date)
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
+    async getPreviousMachineryJobRegistry(@Args('user') user: string, @Args('date') date: string, @Args('equipment') equipment: string) {
+
+        return await this.machineryService.getPreviousMachineryJobRegistry(user, date, equipment)
+    
+    }
+
+    @Query( () => [ FullMachineryFuelRegistry ] )
+    async getAllMachineryFuelRegistryByUser(@Args( { nullable: true, name: 'user' } ) user: string) {
+
+        return await this.machineryService.getAllMachineryFuelRegistryByUser(user)
+    
+    }
+
+    @Mutation( () => DeleteMachineryFuelRegistryResultUnion)
+    async deleteMachineryFuelRegistry(@Args('form') form: DeleteMachineryFuelRegistryInput) {
+
+        return await this.machineryService.deleteMachineryFuelRegistry(form)
     
     }
 

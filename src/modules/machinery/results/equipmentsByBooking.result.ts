@@ -20,6 +20,12 @@ export class EquipmentForInternalBookings extends Machinery {
     
     @Field( () => String)
     address: string;
+    
+    @Field( () => String, { nullable: true } )
+    load?: string;
+    
+    @Field( () => String, { nullable: true } )
+    origin?: string;
 
 }
 
@@ -63,6 +69,12 @@ export class EquipmentForExternalBookings {
 
     @Field( () => String)
     address: string;
+
+    @Field( () => String, { nullable: true } )
+    load?: string;
+    
+    @Field( () => String, { nullable: true } )
+    origin?: string;
 
 }
 

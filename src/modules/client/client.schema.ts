@@ -3,19 +3,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, ObjectId } from 'mongoose'
 
 @ObjectType()
-export class Loads {
-
-    @Field( () => String)
-    @Prop()
-    type: string
-
-    @Field( () => Number)
-    @Prop()
-    amount: number
-
-}
-
-@ObjectType()
 export class Billing {
     
     @Field( () => String)
@@ -37,10 +24,6 @@ export class Billing {
     @Field( () => String)
     @Prop()
     phone: string;
-    
-    @Field( () => [ Loads ] )
-    @Prop( [{ type: Loads }] )
-    loads: Loads[];
 
 }
 

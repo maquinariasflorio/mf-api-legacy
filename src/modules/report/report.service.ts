@@ -81,9 +81,9 @@ export class ReportService {
             ...internalMachineryJobRegistries.map( (jobRegistry) => {
 
                 return {
-                    equipment      : `${jobRegistry.equipment.code} | ${jobRegistry.equipment.name}`,
+                    equipment      : jobRegistry.equipment.code,
                     building       : jobRegistry.building,
-                    operator       : `${jobRegistry.operator.rut} | ${jobRegistry.operator.name}`,
+                    operator       : jobRegistry.operator.name,
                     address        : jobRegistry.address,
                     startHourmeter : jobRegistry.startHourmeter,
                     endHourmeter   : jobRegistry.endHourmeter,
@@ -98,9 +98,9 @@ export class ReportService {
                 const { booking, machine } = getMachineBooking(equipment._id.toString(), 'INTERNAL')
 
                 return {
-                    equipment      : `${equipment.code} | ${equipment.name}`,
+                    equipment      : equipment.code,
                     building       : booking ? booking.building : '',
-                    operator       : machine ? machine.operator : '',
+                    operator       : machine && machine.operator ? machine.operator.name : '',
                     address        : booking ? booking.address : '',
                     startHourmeter : 0,
                     endHourmeter   : 0,
@@ -135,8 +135,8 @@ export class ReportService {
             ...internalTruckJobRegistries.map( (jobRegistry) => {
 
                 return {
-                    equipment      : `${jobRegistry.equipment.code} | ${jobRegistry.equipment.name}`,
-                    operator       : `${jobRegistry.operator.rut} | ${jobRegistry.operator.name}`,
+                    equipment      : jobRegistry.equipment.code,
+                    operator       : jobRegistry.operator.name,
                     volume         : jobRegistry.equipment.volume,
                     building       : jobRegistry.building,
                     address        : jobRegistry.address,
@@ -153,8 +153,8 @@ export class ReportService {
                 const { booking, machine } = getMachineBooking(equipment._id.toString(), 'INTERNAL')
 
                 return {
-                    equipment      : `${equipment.code} | ${equipment.name}`,
-                    operator       : machine ? machine.operator : '',
+                    equipment      : equipment.code,
+                    operator       : machine && machine.operator ? machine.operator.name : '',
                     volume         : equipment.volume,
                     building       : booking ? booking.building : '',
                     address        : booking ? booking.address : '',
