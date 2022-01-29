@@ -28,6 +28,8 @@ import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegi
 import { ClientService } from '../client/client.service'
 import { CounterService } from '../counter/counter.service'
 import { AllowedWorkCondition } from '../booking/booking.schema'
+import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
+import { MachineryFuelRegistryNotFound } from './results/machineryFuelRegistryNotFound.result'
 
 @Injectable()
 export class MachineryService {
@@ -219,6 +221,8 @@ export class MachineryService {
                                     ...clientCache[_idClient],
                                 },
 
+                                load     : machine.load,
+                                origin   : machine.origin,
                                 building : booking.building,
                                 operator : user,
                                 address  : booking.address,
@@ -255,6 +259,8 @@ export class MachineryService {
                             type          : machine.machineryType,
                             minHours      : machine.minHours,
                             workCondition : machine.workCondition,
+                            load          : machine.load,
+                            origin        : machine.origin,
                             client        : {
                                 ...clientCache[_idClient],
                             },
@@ -310,6 +316,10 @@ export class MachineryService {
         try {
 
             const newDocument = await newJobRegistry.save()
+
+            this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
+                ...newDocument.toObject(),
+            } } )
 
             const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
                 $inc: {
@@ -396,12 +406,25 @@ export class MachineryService {
             
         const newMachineryJobRegistry = this.parseMachineryJobRegistry(machineryJobRegistry)
 
-        await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
-            $set: {
-                ...newMachineryJobRegistry,
-                client,
+        await this.machineryJobRegistryModel.findOneAndUpdate(
+            {
+                _id: new ObjectId(machineryJobRegistry._id),
             },
-        } )
+            {
+                $set: {
+                    ...newMachineryJobRegistry,
+                    client,
+                },
+            },
+            {
+                returnOriginal: false,
+            },
+            (err, document) => {
+
+                this.pubSub.publish('jobRegistryUpdated', { jobRegistryUpdated: document } )
+            
+            }
+        ).clone()
 
         return new Ok()
     
@@ -415,12 +438,27 @@ export class MachineryService {
             return new MachineryJobRegistryNotFound()
     
         await this.machineryJobRegistryModel.deleteOne( { _id: new ObjectId(machineryJobRegistry._id) } )
+
+        this.pubSub.publish('jobRegistryDeleted', { jobRegistryDeleted: machineryJobRegistry._id } )
     
         return new Ok()
         
     }
 
-    async createMachineryFuelRegistry(machineryFuelRegistry: MachineryFuelRegistryInput) {
+    async deleteMachineryFuelRegistry(machineryFuelRegistry: DeleteMachineryFuelRegistryInput) {
+            
+        const existFuelRegistry = await this.machineryFuelRegistryModel.findOne( { _id: new ObjectId(machineryFuelRegistry._id) } )
+    
+        if (!existFuelRegistry)
+            return new MachineryFuelRegistryNotFound()
+    
+        await this.machineryFuelRegistryModel.deleteOne( { _id: new ObjectId(machineryFuelRegistry._id) } )
+    
+        return new Ok()
+        
+    }
+
+    async createMachineryFuelRegistry(machineryFuelRegistry: MachineryFuelRegistryInput, user) {
         
         const session = await this.connection.startSession()
         session.startTransaction()
@@ -437,10 +475,13 @@ export class MachineryService {
             } ).sort( { date: -1 } ).limit(1).lean()
         
         }
+
+        const executor = await this.userService.findOneUser( { _id: new ObjectId(user) } )
                 
         const newFuelRegistry = new this.machineryFuelRegistryModel( {
             ...machineryFuelRegistry,
             previousRegistry: previousRegistry && previousRegistry[0] ? previousRegistry[0]._id.toString() : null,
+            executor,
         } )
         
         try {
@@ -660,6 +701,19 @@ export class MachineryService {
     
     }
 
+    async getAllMachineryJobRegistryByUser(userId: string) {
+
+        const conditions = {
+            "executor._id": new ObjectId(userId),
+        }
+
+        if (!userId)
+            delete conditions["executor._id"]
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
     async getAllMachineryJobRegistryByDate(date: string) {
 
         const conditions = {
@@ -667,6 +721,53 @@ export class MachineryService {
         }
 
         return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
+    async getPreviousMachineryJobRegistry(userId, date, equipment) {
+
+        const conditions = {
+            "executor._id" : new ObjectId(userId),
+            "date"         : {
+                $lte: new Date(date),
+            },
+        }
+
+        if (isValidObjectId(equipment) )
+            conditions["equipment._id"] = new ObjectId(equipment)
+        else
+            conditions["equipment.name"] = equipment
+        
+        return await this.machineryJobRegistryModel.find(conditions).sort( { date: -1 } ).limit(1).lean()
+    
+    }
+
+    async getAllMachineryFuelRegistryByUser(userId: string) {
+
+        const conditions = {
+            "executor._id": new ObjectId(userId),
+        }
+
+        if (!userId)
+            delete conditions["executor._id"]
+
+        const registries = await this.machineryFuelRegistryModel.find(conditions).sort( { date: -1 } ).lean()
+
+        const equipments = await this.findEquipment()
+        const operators = await this.userService.findUser()
+
+        return registries.map( (registry) => {
+                
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === registry.equipment)
+            const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
+
+            return {
+                ...registry,
+                equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
+                operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
+            }
+    
+        } )
     
     }
 

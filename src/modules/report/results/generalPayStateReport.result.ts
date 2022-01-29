@@ -59,8 +59,8 @@ export class GeneralPayStateTruck {
     @Field( () => Number)
     volume: number;
 
-    @Field( () => String)
-    load: string;
+    @Field( () => String, { nullable: true } )
+    load?: string;
 
     @Field( () => Number)
     totalTravels: number;

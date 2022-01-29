@@ -147,6 +147,8 @@ export class BookingService {
 
             return {
                 ...machinery,
+                load      : machinery.load ? machinery.load.toUpperCase().trim() : null,
+                origin    : machinery.origin ? machinery.origin.toUpperCase().trim() : null,
                 equipment : booking.type === AllowedBookingType.INTERNAL ? new ObjectId(machinery.equipment) : machinery.equipment.toUpperCase().trim(),
                 operator  : booking.type === AllowedBookingType.INTERNAL ? new ObjectId(machinery.operator) : machinery.operator.toUpperCase().trim(),
             }

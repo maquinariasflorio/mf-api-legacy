@@ -35,6 +35,14 @@ export class BookingMachineryInput {
 
     @Field( { nullable: true } )
     volume?: number;
+
+    // LOADS
+
+    @Field( { nullable: true } )
+    load?: string;
+
+    @Field( { nullable: true } )
+    origin?: string;
     
 }
 

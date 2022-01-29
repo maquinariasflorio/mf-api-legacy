@@ -29,18 +29,12 @@ type View {
   children: [View!]!
 }
 
-type Loads {
-  type: String!
-  amount: Float!
-}
-
 type Billing {
   name: String!
   rut: String!
   category: String!
   address: String!
   phone: String!
-  loads: [Loads!]!
 }
 
 type Client {
@@ -85,6 +79,8 @@ type BookingMachinery {
   amountPerTravel: Float
   amountPerDay: Float
   volume: Float
+  load: String
+  origin: String
 }
 
 enum AllowedWorkCondition {
@@ -138,6 +134,8 @@ type EquipmentForInternalBookings {
   building: String!
   operator: User!
   address: String!
+  load: String
+  origin: String
 }
 
 type EquipmentForExternalBookings {
@@ -149,6 +147,8 @@ type EquipmentForExternalBookings {
   building: String!
   operator: String!
   address: String!
+  load: String
+  origin: String
 }
 
 type MachineryMaintenance {
@@ -247,6 +247,7 @@ type FullMachineryFuelRegistry {
   date: DateTime!
   time: String!
   previousRegistry: String
+  executor: User
 }
 
 type FullBooking {
@@ -275,6 +276,8 @@ type ExternalMachine {
   amountPerTravel: Float
   amountPerDay: Float
   volume: Float
+  load: String
+  origin: String
 }
 
 type InternalMachine {
@@ -287,6 +290,8 @@ type InternalMachine {
   amountPerTravel: Float
   amountPerDay: Float
   volume: Float
+  load: String
+  origin: String
 }
 
 type PayStateFilterBuilding {
@@ -389,7 +394,7 @@ type GeneralPayStateTruck {
   operator: Operator!
   equipment: Equipment!
   volume: Float!
-  load: String!
+  load: String
   totalTravels: Float!
   workingDayType: String!
   totalAmount: Float!
@@ -424,7 +429,10 @@ type Query {
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
   getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
   getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByUser(user: String): [FullMachineryJobRegistry!]!
   getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
+  getPreviousMachineryJobRegistry(equipment: String!, date: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryFuelRegistryByUser(user: String): [FullMachineryFuelRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
@@ -473,6 +481,7 @@ input PayStatesFilter {
 
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
+  changePassword(form: ChangePasswordInput!): ChangePasswordResultUnion!
   createUser(form: UserInput!): CreateUserResultUnion!
   updateUser(form: UpdateUserInput!): UpdateUserResultUnion!
   deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
@@ -487,12 +496,13 @@ type Mutation {
   deleteMachineryJobRegistry(form: DeleteMachineryJobRegistryInput!): DeleteMachineryJobRegistryResultUnion!
   createMachineryFuelRegistry(form: MachineryFuelRegistryInput!): MachineryFuelRegistryResultUnion!
   changeMaintenanceStatus(id: String!): MachineryMaintenance!
+  deleteMachineryFuelRegistry(form: DeleteMachineryFuelRegistryInput!): DeleteMachineryFuelRegistryResultUnion!
   createBooking(form: BookingInput!): CreateBookingResultUnion!
   updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
   deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
 }
 
-union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
+union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode | WrongCurrentPassword
 
 type TokenNotFound {
   message: String!
@@ -502,11 +512,21 @@ type WrongChangePasswordCode {
   message: String!
 }
 
+type WrongCurrentPassword {
+  message: String!
+}
+
 input NewPasswordInput {
   rut: String!
   password: String!
   confirmPassword: String!
   code: String!
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+  confirmPassword: String
 }
 
 union CreateUserResultUnion = Ok | UserAlreadyExists
@@ -562,12 +582,6 @@ input BillingInput {
   category: String!
   address: String!
   phone: String!
-  loads: [LoadsInput!]!
-}
-
-input LoadsInput {
-  type: String!
-  amount: Float!
 }
 
 union UpdateClientResultUnion = Ok | ClientNotFound
@@ -717,6 +731,16 @@ enum AllowedMachineryFuelType {
   RECHARGE_OTHERS
 }
 
+union DeleteMachineryFuelRegistryResultUnion = Ok | MachineryFuelRegistryNotFound
+
+type MachineryFuelRegistryNotFound {
+  message: String!
+}
+
+input DeleteMachineryFuelRegistryInput {
+  _id: String!
+}
+
 union CreateBookingResultUnion = Ok
 
 input BookingInput {
@@ -743,6 +767,8 @@ input BookingMachineryInput {
   amountPerTravel: Float
   amountPerDay: Float
   volume: Float
+  load: String
+  origin: String
 }
 
 input BookingReceiverInput {
@@ -779,4 +805,7 @@ input DeleteBookingInput {
 type Subscription {
   maintenanceAdded: FullMaintenance!
   maintenanceStatusUpdated: MachineryMaintenance!
+  jobRegistryAdded: FullMachineryJobRegistry!
+  jobRegistryDeleted: String!
+  jobRegistryUpdated: FullMachineryJobRegistry!
 }
