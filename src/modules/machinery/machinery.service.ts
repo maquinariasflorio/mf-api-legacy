@@ -317,6 +317,10 @@ export class MachineryService {
 
             const newDocument = await newJobRegistry.save()
 
+            this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
+                ...newDocument.toObject(),
+            } } )
+
             const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
                 $inc: {
                     lastFolio: 1,
@@ -402,12 +406,25 @@ export class MachineryService {
             
         const newMachineryJobRegistry = this.parseMachineryJobRegistry(machineryJobRegistry)
 
-        await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
-            $set: {
-                ...newMachineryJobRegistry,
-                client,
+        await this.machineryJobRegistryModel.findOneAndUpdate(
+            {
+                _id: new ObjectId(machineryJobRegistry._id),
             },
-        } )
+            {
+                $set: {
+                    ...newMachineryJobRegistry,
+                    client,
+                },
+            },
+            {
+                returnOriginal: false,
+            },
+            (err, document) => {
+
+                this.pubSub.publish('jobRegistryUpdated', { jobRegistryUpdated: document } )
+            
+            }
+        ).clone()
 
         return new Ok()
     
@@ -421,6 +438,8 @@ export class MachineryService {
             return new MachineryJobRegistryNotFound()
     
         await this.machineryJobRegistryModel.deleteOne( { _id: new ObjectId(machineryJobRegistry._id) } )
+
+        this.pubSub.publish('jobRegistryDeleted', { jobRegistryDeleted: machineryJobRegistry._id } )
     
         return new Ok()
         

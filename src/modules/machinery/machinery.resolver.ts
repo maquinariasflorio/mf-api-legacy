@@ -203,4 +203,34 @@ export class MachineryResolver {
     
     }
 
+    @Public()
+    @Subscription( () => FullMachineryJobRegistry, {
+        name: 'jobRegistryAdded',
+    } )
+    jobRegistryAdded() {
+
+        return this.pubSub.asyncIterator('jobRegistryAdded')
+    
+    }
+
+    @Public()
+    @Subscription( () => String, {
+        name: 'jobRegistryDeleted',
+    } )
+    jobRegistryDeleted() {
+
+        return this.pubSub.asyncIterator('jobRegistryDeleted')
+    
+    }
+
+    @Public()
+    @Subscription( () => FullMachineryJobRegistry, {
+        name: 'jobRegistryUpdated',
+    } )
+    jobRegistryUpdated() {
+
+        return this.pubSub.asyncIterator('jobRegistryUpdated')
+    
+    }
+
 }

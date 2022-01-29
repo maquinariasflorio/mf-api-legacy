@@ -794,4 +794,7 @@ input DeleteBookingInput {
 type Subscription {
   maintenanceAdded: FullMaintenance!
   maintenanceStatusUpdated: MachineryMaintenance!
+  jobRegistryAdded: FullMachineryJobRegistry!
+  jobRegistryDeleted: String!
+  jobRegistryUpdated: FullMachineryJobRegistry!
 }
