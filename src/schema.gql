@@ -481,6 +481,7 @@ input PayStatesFilter {
 
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
+  changePassword(form: ChangePasswordInput!): ChangePasswordResultUnion!
   createUser(form: UserInput!): CreateUserResultUnion!
   updateUser(form: UpdateUserInput!): UpdateUserResultUnion!
   deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
@@ -501,7 +502,7 @@ type Mutation {
   deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
 }
 
-union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
+union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode | WrongCurrentPassword
 
 type TokenNotFound {
   message: String!
@@ -511,11 +512,21 @@ type WrongChangePasswordCode {
   message: String!
 }
 
+type WrongCurrentPassword {
+  message: String!
+}
+
 input NewPasswordInput {
   rut: String!
   password: String!
   confirmPassword: String!
   code: String!
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+  confirmPassword: String
 }
 
 union CreateUserResultUnion = Ok | UserAlreadyExists
