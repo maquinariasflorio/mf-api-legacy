@@ -41,6 +41,9 @@ export class MachineryJobRegistryInput {
     load?: string;
 
     @Field( { nullable: true } )
+    origin?: string;
+
+    @Field( { nullable: true } )
     totalTravels?: number;
 
     @Field( { nullable: true } )

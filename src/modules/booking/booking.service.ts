@@ -182,6 +182,22 @@ export class BookingService {
     
     }
 
+    async getBookingByClientEquipmentBuildingAndDate(client: string, date: string, equipment: string, building: string) {
+
+        return await this.findBooking( {
+            client    : new ObjectId(client),
+            startDate : { $lte: new Date(date) },
+            endDate   : { $gte: new Date(date) },
+            building  : building,
+            machines  : {
+                $elemMatch: {
+                    equipment: isValidObjectId(equipment) ? new ObjectId(equipment) : equipment,
+                },
+            },
+        } )
+    
+    }
+
     async getAllBookingsByUserAndDate(user: string, date: string, role: string) {
 
         const condition = {
