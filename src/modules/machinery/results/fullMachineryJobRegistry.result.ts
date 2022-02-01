@@ -10,6 +10,9 @@ export class ExternalEquipment {
     @Field( () => String)
     name: string;
 
+    @Field( () => Number, { nullable: true } )
+    volume?: number;
+
 }
 
 @ObjectType()
@@ -93,6 +96,9 @@ export class FullMachineryJobRegistry {
 
     @Field( () => String, { nullable: true } )
     load?: string;
+
+    @Field( () => String, { nullable: true } )
+    origin?: string;
 
     @Field( () => Number, { nullable: true } )
     totalTravels?: number;

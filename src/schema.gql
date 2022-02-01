@@ -190,6 +190,7 @@ type FullMachineryJobRegistry {
   workCondition: AllowedWorkCondition
   bookingWorkCondition: AllowedWorkCondition
   load: String
+  origin: String
   totalTravels: Float
   workingDayType: String
   observations: String
@@ -203,6 +204,7 @@ union Equipment = ExternalEquipment | InternalEquipment
 
 type ExternalEquipment {
   name: String!
+  volume: Float
 }
 
 type InternalEquipment {
@@ -395,6 +397,7 @@ type GeneralPayStateTruck {
   equipment: Equipment!
   volume: Float!
   load: String
+  origin: String
   totalTravels: Float!
   workingDayType: String!
   totalAmount: Float!
@@ -667,6 +670,7 @@ input MachineryJobRegistryInput {
   workCondition: String
   bookingWorkCondition: String
   load: String
+  origin: String
   totalTravels: Float
   workingDayType: String
   observations: String
@@ -694,6 +698,7 @@ input UpdateMachineryJobRegistryInput {
   workCondition: String
   bookingWorkCondition: String
   load: String
+  origin: String
   totalTravels: Float
   workingDayType: String
   observations: String

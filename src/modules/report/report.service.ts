@@ -470,6 +470,8 @@ export class ReportService {
                 isInternal,
             } )
 
+            const volume = isInternal ? (job.equipment.volume || 0) : (bookingMachine.volume || 0)
+
             // calculating use
 
             const workCondition = job.bookingWorkCondition === AllowedWorkCondition.BOTH ? job.workCondition : job.bookingWorkCondition
@@ -489,7 +491,7 @@ export class ReportService {
                         amountPerUse   : amountPerDay,
                         load           : item.load,
                         totalTravels   : 0,
-                        volume         : bookingMachine.volume || 0,
+                        volume         : volume,
                         workingDayType : item.workingDayType === 'FULL' ? 'COMPLETA' : (item.workingDayType === 'HALF' ? 'MEDIA' : ''),
                         totalAmount    : item.workingDayType === 'FULL' ? amountPerDay : (item.workingDayType === 'HALF' ? (amountPerDay / 2) : 0),
                         workCondition,
@@ -503,7 +505,7 @@ export class ReportService {
             }
             else if (workCondition === AllowedWorkCondition.TRAVEL) {
 
-                const amountPerTravel = bookingMachine.amountPerTravel || 0
+                const amountPerTravel = bookingMachine ? bookingMachine.amountPerTravel : 0
                 const travels = (jobs as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalTravels || 0), 0)
                 const folio = (jobs as MachineryJobRegistry[] ).slice(1, (jobs as MachineryJobRegistry[] ).length).reduce( (acc, item) => item.folio ? `${acc}, ${item.folio}` : acc, jobs[0].folio || '')
 
@@ -516,9 +518,10 @@ export class ReportService {
                     amountPerUse   : amountPerTravel,
                     load           : job.load,
                     totalTravels   : travels,
-                    volume         : bookingMachine.volume || 0,
+                    volume         : volume,
+                    origin         : job.origin,
                     workingDayType : '',
-                    totalAmount    : travels * amountPerTravel,
+                    totalAmount    : travels * amountPerTravel * volume,
                     workCondition,
                     folio,
                 } as GeneralPayStateTruck)

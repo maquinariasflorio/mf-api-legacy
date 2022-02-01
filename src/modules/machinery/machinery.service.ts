@@ -681,9 +681,34 @@ export class MachineryService {
     }
 
     async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
-            
-        return await this.machineryJobRegistryModel.find(conditions).lean()
         
+        const jobs = await this.machineryJobRegistryModel.find(conditions).lean()
+
+        const bookingCache = {}
+        
+        for (const job of jobs) {
+
+            // is external
+            if (!job.equipment._id) {
+
+                const key = `${job.building}|${job.date.toISOString()}|${job.equipment.name}|${job.client._id.toString()}`
+                
+                const booking = bookingCache[key] != null
+                    ? bookingCache[key]
+                    : await this.bookingService.getBookingByClientEquipmentBuildingAndDate(job.client._id.toString(), job.date.toISOString(), job.equipment.name, job.building)
+                
+                bookingCache[key] = booking
+
+                const machine = booking && booking.length > 0 && booking[0].machines ? booking[0].machines.find(machine => machine.equipment === job.equipment.name) : {}
+
+                job.equipment.volume = machine.volume || 0
+            
+            }
+        
+        }
+
+        return jobs
+    
     }
 
     async getAllMachineryJobRegistryByUserAndDate(userId: string, startDate: string, endDate: string) {

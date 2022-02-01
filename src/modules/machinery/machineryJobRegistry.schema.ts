@@ -60,6 +60,10 @@ export class MachineryJobRegistry {
     @Prop()
     load?: string;
 
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    origin?: string;
+
     @Field( () => Number, { nullable: true } )
     @Prop()
     totalTravels?: number;
