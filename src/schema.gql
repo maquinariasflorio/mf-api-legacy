@@ -2,6 +2,10 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Ok {
+  message: String
+}
+
 type Role {
   _id: String!
   name: String!
@@ -436,8 +440,11 @@ type Query {
   getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
   getPreviousMachineryJobRegistry(equipment: String!, date: String!, user: String!): [FullMachineryJobRegistry!]!
   getAllMachineryFuelRegistryByUser(user: String): [FullMachineryFuelRegistry!]!
+  sendJobRegistryByEmail(receivers: [String!]!, folio: String!, file: String!): Ok!
+  getJobRegistryById(id: String!): [FullMachineryJobRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
+  getBookingByClientDateEquipmentBuilding(building: String!, equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
   getBookingsForPayStates(endDate: String!, startDate: String!): PayStateFilters!
@@ -447,10 +454,6 @@ type Query {
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
-
-type Ok {
-  message: String
-}
 
 type UserNotFound {
   message: String!

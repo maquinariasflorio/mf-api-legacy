@@ -26,6 +26,7 @@ import { DeleteMachineryJobRegistryResultUnion } from './outputs/deleteMachinery
 import { FullMachineryFuelRegistry } from './results/fullMachineryFuelRegistry.result'
 import { DeleteMachineryFuelRegistryResultUnion } from './outputs/deleteMachineryFuelRegistry.output'
 import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
+import { Ok } from 'src/commons/results/ok.result'
 
 @Resolver()
 export class MachineryResolver {
@@ -230,6 +231,23 @@ export class MachineryResolver {
     jobRegistryUpdated() {
 
         return this.pubSub.asyncIterator('jobRegistryUpdated')
+    
+    }
+
+    @Query( () => Ok)
+    async sendJobRegistryByEmail(@Args('file') file: string, @Args('folio') folio: string, @Args( { name: 'receivers', type: () => [ String ] } ) receivers: string[] ) {
+
+        // eslint-disable-next-line no-console
+        console.log('paso')
+
+        return await this.machineryService.sendJobRegistryByEmail(file, folio, receivers)
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
+    async getJobRegistryById(@Args('id') id: string) {
+
+        return await this.machineryService.getJobRegistryById(id)
     
     }
 
