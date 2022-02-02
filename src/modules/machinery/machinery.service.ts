@@ -30,6 +30,7 @@ import { CounterService } from '../counter/counter.service'
 import { AllowedWorkCondition } from '../booking/booking.schema'
 import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
 import { MachineryFuelRegistryNotFound } from './results/machineryFuelRegistryNotFound.result'
+import { MailerService } from '@nestjs-modules/mailer'
 
 @Injectable()
 export class MachineryService {
@@ -53,6 +54,7 @@ export class MachineryService {
         private readonly counterService: CounterService,
         @Inject(forwardRef( () => BookingService) )
         private readonly bookingService: BookingService,
+        private readonly mailerService: MailerService,
     ) {}
 
     async findEquipment(conditions?: Record<string, unknown>) {
@@ -343,7 +345,7 @@ export class MachineryService {
 
             await session.commitTransaction()
 
-            return new Ok()
+            return new Ok( { message: newDocument._id.toString() } )
         
         }
         catch (error) {
@@ -749,6 +751,16 @@ export class MachineryService {
     
     }
 
+    async getJobRegistryById(id: string) {
+
+        const conditions = {
+            _id: new ObjectId(id),
+        }
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
     async getPreviousMachineryJobRegistry(userId, date, equipment) {
 
         const conditions = {
@@ -793,6 +805,26 @@ export class MachineryService {
             }
     
         } )
+    
+    }
+
+    async sendJobRegistryByEmail(file, folio, receivers) {
+
+        await this.mailerService.sendMail( {
+            to          : receivers,
+            from        : `"No Reply" <${process.env.SMTP_USER}>`,
+            subject     : 'Maquinarias Florio - Nuevo registro de uso',
+            text        : `Se registró un nuevo uso de maquinaria con el folio: ${folio}`,
+            html        : `<p>Se registró un nuevo uso de maquinaria con el folio: ${folio}</p>`,
+            attachments : [
+                {
+                    filename : `reporte_equipo_folio_${folio}.pdf`,
+                    path     : 'data:application/pdf;base64,' + file,
+                },
+            ],
+        } )
+
+        return new Ok()
     
     }
 
