@@ -568,49 +568,53 @@ export class MachineryService {
 
     async calculateMaintenance(equipment: Machinery, newHourmeter: number) {
 
-        const maintenanceType = this.maintenanceMetadata[equipment.maintenanceClass]
+        if (equipment.type === AllowedMachineryType.OTHER) {
 
-        // calculate the maintenance number to set it as id
-        const maintenanceNumber = Math.floor(newHourmeter/maintenanceType.every)
+            const maintenanceType = this.maintenanceMetadata[equipment.maintenanceClass]
 
-        const biggestStep = Math.max.apply(null, maintenanceType.steps)
-        const partition = Math.floor(newHourmeter/biggestStep)
-        let kmsOfPartition = newHourmeter - (partition * biggestStep)
-        kmsOfPartition = kmsOfPartition > 0 ? kmsOfPartition : newHourmeter
+            // calculate the maintenance number to set it as id
+            const maintenanceNumber = Math.floor(newHourmeter/maintenanceType.every)
 
-        const section = Math.floor(kmsOfPartition/maintenanceType.every)
-        const deltaKms = kmsOfPartition - (section * maintenanceType.every)
+            const biggestStep = Math.max.apply(null, maintenanceType.steps)
+            const partition = Math.floor(newHourmeter/biggestStep)
+            let kmsOfPartition = newHourmeter - (partition * biggestStep)
+            kmsOfPartition = kmsOfPartition > 0 ? kmsOfPartition : newHourmeter
 
-        const alertMargin = 10
+            const section = Math.floor(kmsOfPartition/maintenanceType.every)
+            const deltaKms = kmsOfPartition - (section * maintenanceType.every)
 
-        if (deltaKms >= (maintenanceType.every - alertMargin) ) {
+            const alertMargin = 10
 
-            const nextMaintenance = section * maintenanceType.every + maintenanceType.every
-            const maintenanceStep = maintenanceType.steps.includes(nextMaintenance) ? nextMaintenance : maintenanceType.every
+            if (deltaKms >= (maintenanceType.every - alertMargin) ) {
 
-            const maintenance = new this.machineryMaintenanceModel( {
-                uid              : maintenanceNumber + 1,
-                equipment        : equipment._id.toString(),
-                maintenanceClass : equipment.maintenanceClass,
-                step             : maintenanceStep,
-                kmsOfMachinery   : newHourmeter,
-                status           : MaintenanceStatus.PENDING,
-            } )
+                const nextMaintenance = section * maintenanceType.every + maintenanceType.every
+                const maintenanceStep = maintenanceType.steps.includes(nextMaintenance) ? nextMaintenance : maintenanceType.every
 
-            try {
+                const maintenance = new this.machineryMaintenanceModel( {
+                    uid              : maintenanceNumber + 1,
+                    equipment        : equipment._id.toString(),
+                    maintenanceClass : equipment.maintenanceClass,
+                    step             : maintenanceStep,
+                    kmsOfMachinery   : newHourmeter,
+                    status           : MaintenanceStatus.PENDING,
+                } )
 
-                const newMaintenance = await maintenance.save()
-                this.pubSub.publish('maintenanceAdded', { maintenanceAdded: {
-                    ...newMaintenance.toObject(),
-                    equipment,
-                } } )
+                try {
 
-                return newMaintenance
-            
-            }
-            catch (error) {
+                    const newMaintenance = await maintenance.save()
+                    this.pubSub.publish('maintenanceAdded', { maintenanceAdded: {
+                        ...newMaintenance.toObject(),
+                        equipment,
+                    } } )
 
-                return null
+                    return newMaintenance
+                
+                }
+                catch (error) {
+
+                    return null
+                
+                }
             
             }
         
