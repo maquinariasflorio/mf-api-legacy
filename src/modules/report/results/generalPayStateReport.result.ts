@@ -39,6 +39,9 @@ export class GeneralPayStateMachinery {
     @Field( () => String)
     folio: string;
 
+    @Field( () => String, { nullable: true } )
+    amounType?: string;
+
 }
 
 @ObjectType()
@@ -85,6 +88,9 @@ export class GeneralPayStateTruck {
 
     @Field( () => String)
     folio: string;
+
+    @Field( () => String, { nullable: true } )
+    amounType?: string;
 
 }
 
