@@ -351,7 +351,7 @@ type TruckResume {
   volume: Float!
   building: String!
   address: String!
-  load: String!
+  load: String
   totalTravels: Float!
   workingDayType: String!
   observations: String!
@@ -367,19 +367,6 @@ type DailyReport {
   extern: DailyEquipmentsResume!
 }
 
-type DailyPayStateReport {
-  client: Client!
-  building: String!
-  operator: Operator!
-  equipment: Equipment!
-  amountPerUse: Float!
-  amounType: String!
-  hours: Float!
-  minHours: Float!
-  toFacture: Float!
-  totalAmount: Float!
-}
-
 type GeneralPayStateMachinery {
   client: Client!
   building: String!
@@ -392,6 +379,7 @@ type GeneralPayStateMachinery {
   totalAmount: Float!
   date: DateTime!
   folio: String!
+  amounType: String
 }
 
 type GeneralPayStateTruck {
@@ -409,6 +397,7 @@ type GeneralPayStateTruck {
   workCondition: AllowedWorkCondition!
   date: DateTime!
   folio: String!
+  amounType: String
 }
 
 type GeneralPayStateEquipments {
@@ -449,7 +438,7 @@ type Query {
   getBookingsByDate(date: String!): [FullBooking!]!
   getBookingsForPayStates(endDate: String!, startDate: String!): PayStateFilters!
   getDailyResume(date: String!): DailyReport!
-  getDailyPayState(date: String!): [DailyPayStateReport!]!
+  getDailyPayState(date: String!): GeneralPayStateReport!
   getEquipmentPayState(filters: PayStatesFilter!): GeneralPayStateReport!
 }
 

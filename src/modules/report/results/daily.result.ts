@@ -47,8 +47,8 @@ export class TruckResume {
     @Field( () => String)
     address: string;
 
-    @Field( () => String)
-    load: string;
+    @Field( () => String, { nullable: true } )
+    load?: string;
 
     @Field( () => Number)
     totalTravels: number;
