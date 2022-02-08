@@ -24,6 +24,9 @@ import { UpdateMachineryJobRegistryResultUnion } from './outputs/updateMachinery
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
 import { DeleteMachineryJobRegistryResultUnion } from './outputs/deleteMachineryJobRegistry.output'
 import { FullMachineryFuelRegistry } from './results/fullMachineryFuelRegistry.result'
+import { DeleteMachineryFuelRegistryResultUnion } from './outputs/deleteMachineryFuelRegistry.output'
+import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
+import { Ok } from 'src/commons/results/ok.result'
 
 @Resolver()
 export class MachineryResolver {
@@ -91,9 +94,9 @@ export class MachineryResolver {
     }
 
     @Mutation( () => MachineryFuelRegistryResultUnion)
-    async createMachineryFuelRegistry(@Args('form') form: MachineryFuelRegistryInput) {
+    async createMachineryFuelRegistry(@Args('form') form: MachineryFuelRegistryInput, @CurrentUser() user: string) {
 
-        return await this.machineryService.createMachineryFuelRegistry(form)
+        return await this.machineryService.createMachineryFuelRegistry(form, user)
     
     }
 
@@ -132,6 +135,13 @@ export class MachineryResolver {
     
     }
 
+    @Mutation( () => MachineryMaintenance)
+    async deleteMaintenance(@Args('id') id: string) {
+
+        return await this.machineryService.deleteMaintenance(id)
+    
+    }
+
     @Public()
     @Subscription( () => FullMaintenance, {
         name: 'maintenanceAdded',
@@ -152,6 +162,16 @@ export class MachineryResolver {
     
     }
 
+    @Public()
+    @Subscription( () => MachineryMaintenance, {
+        name: 'maintenanceDeleted',
+    } )
+    maintenanceDeleted() {
+
+        return this.pubSub.asyncIterator('maintenanceDeleted')
+    
+    }
+
     @Query( () => [ FullMachineryJobRegistry ] )
     async getAllMachineryJobRegistry() {
 
@@ -167,9 +187,81 @@ export class MachineryResolver {
     }
 
     @Query( () => [ FullMachineryJobRegistry ] )
+    async getAllMachineryJobRegistryByUser(@Args( { nullable: true, name: 'user' } ) user: string) {
+
+        return await this.machineryService.getAllMachineryJobRegistryByUser(user)
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
     async getAllMachineryJobRegistryByDate(@Args('date') date: string) {
 
         return await this.machineryService.getAllMachineryJobRegistryByDate(date)
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
+    async getPreviousMachineryJobRegistry(@Args('user') user: string, @Args('date') date: string, @Args('equipment') equipment: string) {
+
+        return await this.machineryService.getPreviousMachineryJobRegistry(user, date, equipment)
+    
+    }
+
+    @Query( () => [ FullMachineryFuelRegistry ] )
+    async getAllMachineryFuelRegistryByUser(@Args( { nullable: true, name: 'user' } ) user: string) {
+
+        return await this.machineryService.getAllMachineryFuelRegistryByUser(user)
+    
+    }
+
+    @Mutation( () => DeleteMachineryFuelRegistryResultUnion)
+    async deleteMachineryFuelRegistry(@Args('form') form: DeleteMachineryFuelRegistryInput) {
+
+        return await this.machineryService.deleteMachineryFuelRegistry(form)
+    
+    }
+
+    @Public()
+    @Subscription( () => FullMachineryJobRegistry, {
+        name: 'jobRegistryAdded',
+    } )
+    jobRegistryAdded() {
+
+        return this.pubSub.asyncIterator('jobRegistryAdded')
+    
+    }
+
+    @Public()
+    @Subscription( () => String, {
+        name: 'jobRegistryDeleted',
+    } )
+    jobRegistryDeleted() {
+
+        return this.pubSub.asyncIterator('jobRegistryDeleted')
+    
+    }
+
+    @Public()
+    @Subscription( () => FullMachineryJobRegistry, {
+        name: 'jobRegistryUpdated',
+    } )
+    jobRegistryUpdated() {
+
+        return this.pubSub.asyncIterator('jobRegistryUpdated')
+    
+    }
+
+    @Query( () => Ok)
+    async sendJobRegistryByEmail(@Args('file') file: string, @Args('folio') folio: string, @Args( { name: 'receivers', type: () => [ String ] } ) receivers: string[] ) {
+
+        return await this.machineryService.sendJobRegistryByEmail(file, folio, receivers)
+    
+    }
+
+    @Query( () => [ FullMachineryJobRegistry ] )
+    async getJobRegistryById(@Args('id') id: string) {
+
+        return await this.machineryService.getJobRegistryById(id)
     
     }
 

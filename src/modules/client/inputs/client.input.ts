@@ -1,17 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql'
 
 @InputType()
-export class LoadsInput {
-
-    @Field()
-    type: string
-
-    @Field()
-    amount: number
-
-}
-
-@InputType()
 export class BillingInput {
     
     @Field()
@@ -28,9 +17,6 @@ export class BillingInput {
 
     @Field()
     phone: string;
-    
-    @Field( () => [ LoadsInput ] )
-    loads: LoadsInput[];
 
 }
 

@@ -17,6 +17,7 @@ import { WrongChangePasswordCode } from './results/wrongChangePassCode.result'
 import { RoleService } from '../role/role.service'
 import { RoleNotFound } from '../role/results/roleNotFound.result'
 import { ViewService } from '../view/view.service'
+import { WrongCurrentPassword } from './results/wrongCurrentPassword.result'
 
 @Injectable()
 export class AuthService {
@@ -175,6 +176,19 @@ export class AuthService {
                 } )
             
             } )
+    
+    }
+
+    async changePassword(form, userId) {
+
+        const user = await this.userService.findOneUser( { _id: userId } )
+
+        if (!compareSync(form.currentPassword, user.password) )
+            return new WrongCurrentPassword( { message: 'The current password is not correct' } )
+
+        await this.userService.changePassword( { userId, password: form.newPassword } )
+    
+        return new Ok()
     
     }
 

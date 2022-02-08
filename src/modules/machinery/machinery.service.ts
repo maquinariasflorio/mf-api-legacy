@@ -28,6 +28,9 @@ import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegi
 import { ClientService } from '../client/client.service'
 import { CounterService } from '../counter/counter.service'
 import { AllowedWorkCondition } from '../booking/booking.schema'
+import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
+import { MachineryFuelRegistryNotFound } from './results/machineryFuelRegistryNotFound.result'
+import { MailerService } from '@nestjs-modules/mailer'
 
 @Injectable()
 export class MachineryService {
@@ -51,6 +54,7 @@ export class MachineryService {
         private readonly counterService: CounterService,
         @Inject(forwardRef( () => BookingService) )
         private readonly bookingService: BookingService,
+        private readonly mailerService: MailerService,
     ) {}
 
     async findEquipment(conditions?: Record<string, unknown>) {
@@ -219,6 +223,8 @@ export class MachineryService {
                                     ...clientCache[_idClient],
                                 },
 
+                                load     : machine.load,
+                                origin   : machine.origin,
                                 building : booking.building,
                                 operator : user,
                                 address  : booking.address,
@@ -255,6 +261,8 @@ export class MachineryService {
                             type          : machine.machineryType,
                             minHours      : machine.minHours,
                             workCondition : machine.workCondition,
+                            load          : machine.load,
+                            origin        : machine.origin,
                             client        : {
                                 ...clientCache[_idClient],
                             },
@@ -311,6 +319,10 @@ export class MachineryService {
 
             const newDocument = await newJobRegistry.save()
 
+            this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
+                ...newDocument.toObject(),
+            } } )
+
             const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
                 $inc: {
                     lastFolio: 1,
@@ -333,7 +345,7 @@ export class MachineryService {
 
             await session.commitTransaction()
 
-            return new Ok()
+            return new Ok( { message: newDocument._id.toString() } )
         
         }
         catch (error) {
@@ -396,12 +408,25 @@ export class MachineryService {
             
         const newMachineryJobRegistry = this.parseMachineryJobRegistry(machineryJobRegistry)
 
-        await this.machineryJobRegistryModel.updateOne( { _id: new ObjectId(machineryJobRegistry._id) }, {
-            $set: {
-                ...newMachineryJobRegistry,
-                client,
+        await this.machineryJobRegistryModel.findOneAndUpdate(
+            {
+                _id: new ObjectId(machineryJobRegistry._id),
             },
-        } )
+            {
+                $set: {
+                    ...newMachineryJobRegistry,
+                    client,
+                },
+            },
+            {
+                returnOriginal: false,
+            },
+            (err, document) => {
+
+                this.pubSub.publish('jobRegistryUpdated', { jobRegistryUpdated: document } )
+            
+            }
+        ).clone()
 
         return new Ok()
     
@@ -415,12 +440,27 @@ export class MachineryService {
             return new MachineryJobRegistryNotFound()
     
         await this.machineryJobRegistryModel.deleteOne( { _id: new ObjectId(machineryJobRegistry._id) } )
+
+        this.pubSub.publish('jobRegistryDeleted', { jobRegistryDeleted: machineryJobRegistry._id } )
     
         return new Ok()
         
     }
 
-    async createMachineryFuelRegistry(machineryFuelRegistry: MachineryFuelRegistryInput) {
+    async deleteMachineryFuelRegistry(machineryFuelRegistry: DeleteMachineryFuelRegistryInput) {
+            
+        const existFuelRegistry = await this.machineryFuelRegistryModel.findOne( { _id: new ObjectId(machineryFuelRegistry._id) } )
+    
+        if (!existFuelRegistry)
+            return new MachineryFuelRegistryNotFound()
+    
+        await this.machineryFuelRegistryModel.deleteOne( { _id: new ObjectId(machineryFuelRegistry._id) } )
+    
+        return new Ok()
+        
+    }
+
+    async createMachineryFuelRegistry(machineryFuelRegistry: MachineryFuelRegistryInput, user) {
         
         const session = await this.connection.startSession()
         session.startTransaction()
@@ -437,10 +477,13 @@ export class MachineryService {
             } ).sort( { date: -1 } ).limit(1).lean()
         
         }
+
+        const executor = await this.userService.findOneUser( { _id: new ObjectId(user) } )
                 
         const newFuelRegistry = new this.machineryFuelRegistryModel( {
             ...machineryFuelRegistry,
             previousRegistry: previousRegistry && previousRegistry[0] ? previousRegistry[0]._id.toString() : null,
+            executor,
         } )
         
         try {
@@ -525,49 +568,53 @@ export class MachineryService {
 
     async calculateMaintenance(equipment: Machinery, newHourmeter: number) {
 
-        const maintenanceType = this.maintenanceMetadata[equipment.maintenanceClass]
+        if (equipment.type === AllowedMachineryType.OTHER) {
 
-        // calculate the maintenance number to set it as id
-        const maintenanceNumber = Math.floor(newHourmeter/maintenanceType.every)
+            const maintenanceType = this.maintenanceMetadata[equipment.maintenanceClass]
 
-        const biggestStep = Math.max.apply(null, maintenanceType.steps)
-        const partition = Math.floor(newHourmeter/biggestStep)
-        let kmsOfPartition = newHourmeter - (partition * biggestStep)
-        kmsOfPartition = kmsOfPartition > 0 ? kmsOfPartition : newHourmeter
+            // calculate the maintenance number to set it as id
+            const maintenanceNumber = Math.floor(newHourmeter/maintenanceType.every)
 
-        const section = Math.floor(kmsOfPartition/maintenanceType.every)
-        const deltaKms = kmsOfPartition - (section * maintenanceType.every)
+            const biggestStep = Math.max.apply(null, maintenanceType.steps)
+            const partition = Math.floor(newHourmeter/biggestStep)
+            let kmsOfPartition = newHourmeter - (partition * biggestStep)
+            kmsOfPartition = kmsOfPartition > 0 ? kmsOfPartition : newHourmeter
 
-        const alertMargin = 10
+            const section = Math.floor(kmsOfPartition/maintenanceType.every)
+            const deltaKms = kmsOfPartition - (section * maintenanceType.every)
 
-        if (deltaKms >= (maintenanceType.every - alertMargin) ) {
+            const alertMargin = 10
 
-            const nextMaintenance = section * maintenanceType.every + maintenanceType.every
-            const maintenanceStep = maintenanceType.steps.includes(nextMaintenance) ? nextMaintenance : maintenanceType.every
+            if (deltaKms >= (maintenanceType.every - alertMargin) ) {
 
-            const maintenance = new this.machineryMaintenanceModel( {
-                uid              : maintenanceNumber + 1,
-                equipment        : equipment._id.toString(),
-                maintenanceClass : equipment.maintenanceClass,
-                step             : maintenanceStep,
-                kmsOfMachinery   : newHourmeter,
-                status           : MaintenanceStatus.PENDING,
-            } )
+                const nextMaintenance = section * maintenanceType.every + maintenanceType.every
+                const maintenanceStep = maintenanceType.steps.includes(nextMaintenance) ? nextMaintenance : maintenanceType.every
 
-            try {
+                const maintenance = new this.machineryMaintenanceModel( {
+                    uid              : maintenanceNumber + 1,
+                    equipment        : equipment._id.toString(),
+                    maintenanceClass : equipment.maintenanceClass,
+                    step             : maintenanceStep,
+                    kmsOfMachinery   : newHourmeter,
+                    status           : MaintenanceStatus.PENDING,
+                } )
 
-                const newMaintenance = await maintenance.save()
-                this.pubSub.publish('maintenanceAdded', { maintenanceAdded: {
-                    ...newMaintenance.toObject(),
-                    equipment,
-                } } )
+                try {
 
-                return newMaintenance
-            
-            }
-            catch (error) {
+                    const newMaintenance = await maintenance.save()
+                    this.pubSub.publish('maintenanceAdded', { maintenanceAdded: {
+                        ...newMaintenance.toObject(),
+                        equipment,
+                    } } )
 
-                return null
+                    return newMaintenance
+                
+                }
+                catch (error) {
+
+                    return null
+                
+                }
             
             }
         
@@ -639,20 +686,46 @@ export class MachineryService {
         
     }
 
-    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
+    async deleteMaintenance(id) {
             
-        const jobRegistries = await this.machineryJobRegistryModel.find(conditions).lean()
-    
-        return jobRegistries.reduce( (acc, jobRegistry) => {
-            
-            acc.push( {
-                ...jobRegistry,
-            } )
-            
-            return acc
-                
-        }, [] )
+        const maintenance = await this.machineryMaintenanceModel.findOne( { _id: new ObjectId(id) } )
+        await maintenance.remove()
+
+        this.pubSub.publish('maintenanceDeleted', { maintenanceDeleted: { ...maintenance.toObject() } } )
+
+        return maintenance
         
+    }
+
+    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
+        
+        const jobs = await this.machineryJobRegistryModel.find(conditions).sort( { date: -1 } ).lean()
+
+        const bookingCache = {}
+        
+        for (const job of jobs) {
+
+            // is external
+            if (!job.equipment._id) {
+
+                const key = `${job.building}|${job.date.toISOString()}|${job.equipment.name}|${job.client._id.toString()}`
+                
+                const booking = bookingCache[key] != null
+                    ? bookingCache[key]
+                    : await this.bookingService.getBookingByClientEquipmentBuildingAndDate(job.client._id.toString(), job.date.toISOString(), job.equipment.name, job.building)
+                
+                bookingCache[key] = booking
+
+                const machine = booking && booking.length > 0 && booking[0].machines ? booking[0].machines.find(machine => machine.equipment === job.equipment.name) : {}
+
+                job.equipment.volume = machine.volume || 0
+            
+            }
+        
+        }
+
+        return jobs
+    
     }
 
     async getAllMachineryJobRegistryByUserAndDate(userId: string, startDate: string, endDate: string) {
@@ -670,6 +743,19 @@ export class MachineryService {
     
     }
 
+    async getAllMachineryJobRegistryByUser(userId: string) {
+
+        const conditions = {
+            "executor._id": new ObjectId(userId),
+        }
+
+        if (!userId)
+            delete conditions["executor._id"]
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
     async getAllMachineryJobRegistryByDate(date: string) {
 
         const conditions = {
@@ -677,6 +763,83 @@ export class MachineryService {
         }
 
         return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
+    async getJobRegistryById(id: string) {
+
+        const conditions = {
+            _id: new ObjectId(id),
+        }
+
+        return await this.getAllMachineryJobRegistry(conditions)
+    
+    }
+
+    async getPreviousMachineryJobRegistry(userId, date, equipment) {
+
+        const conditions = {
+            "executor._id" : new ObjectId(userId),
+            "date"         : {
+                $lte: new Date(date),
+            },
+        }
+
+        if (isValidObjectId(equipment) )
+            conditions["equipment._id"] = new ObjectId(equipment)
+        else
+            conditions["equipment.name"] = equipment
+        
+        return await this.machineryJobRegistryModel.find(conditions).sort( { date: -1 } ).limit(1).lean()
+    
+    }
+
+    async getAllMachineryFuelRegistryByUser(userId: string) {
+
+        const conditions = {
+            "executor._id": new ObjectId(userId),
+        }
+
+        if (!userId)
+            delete conditions["executor._id"]
+
+        const registries = await this.machineryFuelRegistryModel.find(conditions).sort( { date: -1 } ).lean()
+
+        const equipments = await this.findEquipment()
+        const operators = await this.userService.findUser()
+
+        return registries.map( (registry) => {
+                
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === registry.equipment)
+            const operator = operators.find( (operator) => operator._id.toString() === registry.operator)
+
+            return {
+                ...registry,
+                equipment : equipment ? equipment : { name: registry.equipment ? registry.equipment : '' },
+                operator  : operator ? operator : { name: registry.operator ? registry.operator : '' },
+            }
+    
+        } )
+    
+    }
+
+    async sendJobRegistryByEmail(file, folio, receivers) {
+
+        await this.mailerService.sendMail( {
+            to          : receivers,
+            from        : `"No Reply" <${process.env.SMTP_USER}>`,
+            subject     : 'Maquinarias Florio - Nuevo registro de uso',
+            text        : `Se registró un nuevo uso de maquinaria con el folio: ${folio}`,
+            html        : `<p>Se registró un nuevo uso de maquinaria con el folio: ${folio}</p>`,
+            attachments : [
+                {
+                    filename : `reporte_equipo_folio_${folio}.pdf`,
+                    path     : 'data:application/pdf;base64,' + file,
+                },
+            ],
+        } )
+
+        return new Ok()
     
     }
 

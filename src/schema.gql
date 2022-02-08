@@ -2,6 +2,10 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Ok {
+  message: String
+}
+
 type Role {
   _id: String!
   name: String!
@@ -29,18 +33,12 @@ type View {
   children: [View!]!
 }
 
-type Loads {
-  type: String!
-  amount: Float!
-}
-
 type Billing {
   name: String!
   rut: String!
   category: String!
   address: String!
   phone: String!
-  loads: [Loads!]!
 }
 
 type Client {
@@ -82,8 +80,11 @@ type BookingMachinery {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
+  load: String
+  origin: String
 }
 
 enum AllowedWorkCondition {
@@ -137,6 +138,8 @@ type EquipmentForInternalBookings {
   building: String!
   operator: User!
   address: String!
+  load: String
+  origin: String
 }
 
 type EquipmentForExternalBookings {
@@ -148,6 +151,8 @@ type EquipmentForExternalBookings {
   building: String!
   operator: String!
   address: String!
+  load: String
+  origin: String
 }
 
 type MachineryMaintenance {
@@ -189,6 +194,7 @@ type FullMachineryJobRegistry {
   workCondition: AllowedWorkCondition
   bookingWorkCondition: AllowedWorkCondition
   load: String
+  origin: String
   totalTravels: Float
   workingDayType: String
   observations: String
@@ -202,6 +208,7 @@ union Equipment = ExternalEquipment | InternalEquipment
 
 type ExternalEquipment {
   name: String!
+  volume: Float
 }
 
 type InternalEquipment {
@@ -246,6 +253,7 @@ type FullMachineryFuelRegistry {
   date: DateTime!
   time: String!
   previousRegistry: String
+  executor: User
 }
 
 type FullBooking {
@@ -271,8 +279,11 @@ type ExternalMachine {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
+  load: String
+  origin: String
 }
 
 type InternalMachine {
@@ -282,8 +293,45 @@ type InternalMachine {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
+  load: String
+  origin: String
+}
+
+type PayStateFilterBuilding {
+  clientId: String!
+  name: String!
+}
+
+type PayStateFilters {
+  clients: [Client!]!
+  buildings: [PayStateFilterBuilding!]!
+  equipments: [PayStateFilterMachine!]!
+}
+
+union PayStateFilterMachine = PayStateFilterExternalMachine | PayStateFilterInternalMachine
+
+type PayStateFilterExternalMachine {
+  name: String!
+  fromBuilding: [String!]!
+  fromClient: [String!]!
+}
+
+type PayStateFilterInternalMachine {
+  _id: String!
+  type: AllowedMachineryType!
+  name: String!
+  code: String!
+  brand: String!
+  model: String!
+  patent: String!
+  year: Float!
+  volume: Float
+  maintenanceClass: MaintenanceMachineryClass
+  fromBuilding: [String!]!
+  fromClient: [String!]!
 }
 
 type MachineryResume {
@@ -303,7 +351,7 @@ type TruckResume {
   volume: Float!
   building: String!
   address: String!
-  load: String!
+  load: String
   totalTravels: Float!
   workingDayType: String!
   observations: String!
@@ -317,6 +365,49 @@ type DailyEquipmentsResume {
 type DailyReport {
   intern: DailyEquipmentsResume!
   extern: DailyEquipmentsResume!
+}
+
+type GeneralPayStateMachinery {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  amountPerUse: Float!
+  hours: Float!
+  minHours: Float!
+  toFacture: Float!
+  totalAmount: Float!
+  date: DateTime!
+  folio: String!
+  amounType: String
+}
+
+type GeneralPayStateTruck {
+  client: Client!
+  building: String!
+  operator: Operator!
+  equipment: Equipment!
+  volume: Float!
+  load: String
+  origin: String
+  totalTravels: Float!
+  workingDayType: String!
+  totalAmount: Float!
+  amountPerUse: Float!
+  workCondition: AllowedWorkCondition!
+  date: DateTime!
+  folio: String!
+  amounType: String
+}
+
+type GeneralPayStateEquipments {
+  OTHER: [GeneralPayStateMachinery!]!
+  TRUCK: [GeneralPayStateTruck!]!
+}
+
+type GeneralPayStateReport {
+  intern: GeneralPayStateEquipments!
+  extern: GeneralPayStateEquipments!
 }
 
 type Query {
@@ -334,19 +425,24 @@ type Query {
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
   getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
   getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistryByUser(user: String): [FullMachineryJobRegistry!]!
   getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
+  getPreviousMachineryJobRegistry(equipment: String!, date: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryFuelRegistryByUser(user: String): [FullMachineryFuelRegistry!]!
+  sendJobRegistryByEmail(receivers: [String!]!, folio: String!, file: String!): Ok!
+  getJobRegistryById(id: String!): [FullMachineryJobRegistry!]!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
+  getBookingByClientDateEquipmentBuilding(building: String!, equipment: String!, date: String!, client: String!): [Booking!]!
   getUserNextJob(date: String!, user: String!): [Booking!]!
   getBookingsByDate(date: String!): [FullBooking!]!
+  getBookingsForPayStates(endDate: String!, startDate: String!): PayStateFilters!
   getDailyResume(date: String!): DailyReport!
+  getDailyPayState(date: String!): GeneralPayStateReport!
+  getEquipmentPayState(filters: PayStatesFilter!): GeneralPayStateReport!
 }
 
 union RecoverCodeResultUnion = Ok | UserNotFound | InactiveUser
-
-type Ok {
-  message: String
-}
 
 type UserNotFound {
   message: String!
@@ -370,8 +466,17 @@ type ExternalEquipmentsByBooking {
   equipments: [EquipmentForExternalBookings!]!
 }
 
+input PayStatesFilter {
+  startDate: String!
+  endDate: String!
+  client: String
+  building: String
+  equipment: String
+}
+
 type Mutation {
   changePasswordWithAuthCode(form: NewPasswordInput!): ChangePasswordResultUnion!
+  changePassword(form: ChangePasswordInput!): ChangePasswordResultUnion!
   createUser(form: UserInput!): CreateUserResultUnion!
   updateUser(form: UpdateUserInput!): UpdateUserResultUnion!
   deleteUser(form: DeleteUserInput!): DeleteUserResultUnion!
@@ -386,12 +491,14 @@ type Mutation {
   deleteMachineryJobRegistry(form: DeleteMachineryJobRegistryInput!): DeleteMachineryJobRegistryResultUnion!
   createMachineryFuelRegistry(form: MachineryFuelRegistryInput!): MachineryFuelRegistryResultUnion!
   changeMaintenanceStatus(id: String!): MachineryMaintenance!
+  deleteMaintenance(id: String!): MachineryMaintenance!
+  deleteMachineryFuelRegistry(form: DeleteMachineryFuelRegistryInput!): DeleteMachineryFuelRegistryResultUnion!
   createBooking(form: BookingInput!): CreateBookingResultUnion!
   updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
   deleteBooking(form: DeleteBookingInput!): DeleteBookingResultUnion!
 }
 
-union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode
+union ChangePasswordResultUnion = Ok | UserNotFound | InactiveUser | TokenNotFound | WrongChangePasswordCode | WrongCurrentPassword
 
 type TokenNotFound {
   message: String!
@@ -401,11 +508,21 @@ type WrongChangePasswordCode {
   message: String!
 }
 
+type WrongCurrentPassword {
+  message: String!
+}
+
 input NewPasswordInput {
   rut: String!
   password: String!
   confirmPassword: String!
   code: String!
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+  confirmPassword: String
 }
 
 union CreateUserResultUnion = Ok | UserAlreadyExists
@@ -461,12 +578,6 @@ input BillingInput {
   category: String!
   address: String!
   phone: String!
-  loads: [LoadsInput!]!
-}
-
-input LoadsInput {
-  type: String!
-  amount: Float!
 }
 
 union UpdateClientResultUnion = Ok | ClientNotFound
@@ -552,6 +663,7 @@ input MachineryJobRegistryInput {
   workCondition: String
   bookingWorkCondition: String
   load: String
+  origin: String
   totalTravels: Float
   workingDayType: String
   observations: String
@@ -579,6 +691,7 @@ input UpdateMachineryJobRegistryInput {
   workCondition: String
   bookingWorkCondition: String
   load: String
+  origin: String
   totalTravels: Float
   workingDayType: String
   observations: String
@@ -616,6 +729,16 @@ enum AllowedMachineryFuelType {
   RECHARGE_OTHERS
 }
 
+union DeleteMachineryFuelRegistryResultUnion = Ok | MachineryFuelRegistryNotFound
+
+type MachineryFuelRegistryNotFound {
+  message: String!
+}
+
+input DeleteMachineryFuelRegistryInput {
+  _id: String!
+}
+
 union CreateBookingResultUnion = Ok
 
 input BookingInput {
@@ -639,8 +762,11 @@ input BookingMachineryInput {
   minHours: Float
   amountPerHour: Float
   workCondition: AllowedWorkCondition
-  amountPertravel: Float
+  amountPerTravel: Float
   amountPerDay: Float
+  volume: Float
+  load: String
+  origin: String
 }
 
 input BookingReceiverInput {
@@ -677,4 +803,8 @@ input DeleteBookingInput {
 type Subscription {
   maintenanceAdded: FullMaintenance!
   maintenanceStatusUpdated: MachineryMaintenance!
+  maintenanceDeleted: MachineryMaintenance!
+  jobRegistryAdded: FullMachineryJobRegistry!
+  jobRegistryDeleted: String!
+  jobRegistryUpdated: FullMachineryJobRegistry!
 }

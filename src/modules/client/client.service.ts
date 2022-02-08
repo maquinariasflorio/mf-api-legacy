@@ -52,7 +52,6 @@ export class ClientService {
                 name     : client.billing.name.toUpperCase().trim(),
                 category : client.billing.category.toUpperCase().trim(),
                 address  : client.billing.address.toUpperCase().trim(),
-                loads    : client.billing.loads.map(load => ( { ...load, type: load.type.toUpperCase().trim() } ) ),
             },
 
             receivers: client.receivers.map(receiver => receiver.toLowerCase() ),
@@ -110,7 +109,6 @@ export class ClientService {
                     name     : client.billing.name.toUpperCase().trim(),
                     category : client.billing.category.toUpperCase().trim(),
                     address  : client.billing.address.toUpperCase().trim(),
-                    loads    : client.billing.loads.map(load => ( { ...load, type: load.type.toUpperCase().trim() } ) ),
                 },
 
                 receivers: client.receivers.map(receiver => receiver.toLowerCase() ),

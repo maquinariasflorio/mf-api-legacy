@@ -56,11 +56,25 @@ export class BookingMachinery {
 
     @Field( () => Number, { nullable: true } )
     @Prop()
-    amountPertravel?: number;
+    amountPerTravel?: number;
 
     @Field( () => Number, { nullable: true } )
     @Prop()
     amountPerDay?: number;
+
+    @Field( () => Number, { nullable: true } )
+    @Prop()
+    volume?: number;
+
+    // LOADS
+
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    load?: string;
+
+    @Field( () => String, { nullable: true } )
+    @Prop()
+    origin?: string;
 
 }
 
