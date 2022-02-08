@@ -491,6 +491,7 @@ type Mutation {
   deleteMachineryJobRegistry(form: DeleteMachineryJobRegistryInput!): DeleteMachineryJobRegistryResultUnion!
   createMachineryFuelRegistry(form: MachineryFuelRegistryInput!): MachineryFuelRegistryResultUnion!
   changeMaintenanceStatus(id: String!): MachineryMaintenance!
+  deleteMaintenance(id: String!): MachineryMaintenance!
   deleteMachineryFuelRegistry(form: DeleteMachineryFuelRegistryInput!): DeleteMachineryFuelRegistryResultUnion!
   createBooking(form: BookingInput!): CreateBookingResultUnion!
   updateBooking(form: UpdateBookingInput!): UpdateBookingResultUnion!
@@ -802,6 +803,7 @@ input DeleteBookingInput {
 type Subscription {
   maintenanceAdded: FullMaintenance!
   maintenanceStatusUpdated: MachineryMaintenance!
+  maintenanceDeleted: MachineryMaintenance!
   jobRegistryAdded: FullMachineryJobRegistry!
   jobRegistryDeleted: String!
   jobRegistryUpdated: FullMachineryJobRegistry!

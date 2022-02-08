@@ -686,9 +686,20 @@ export class MachineryService {
         
     }
 
+    async deleteMaintenance(id) {
+            
+        const maintenance = await this.machineryMaintenanceModel.findOne( { _id: new ObjectId(id) } )
+        await maintenance.remove()
+
+        this.pubSub.publish('maintenanceDeleted', { maintenanceDeleted: { ...maintenance.toObject() } } )
+
+        return maintenance
+        
+    }
+
     async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
         
-        const jobs = await this.machineryJobRegistryModel.find(conditions).lean()
+        const jobs = await this.machineryJobRegistryModel.find(conditions).sort( { date: -1 } ).lean()
 
         const bookingCache = {}
         
