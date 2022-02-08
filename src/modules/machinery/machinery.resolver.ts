@@ -135,6 +135,13 @@ export class MachineryResolver {
     
     }
 
+    @Mutation( () => MachineryMaintenance)
+    async deleteMaintenance(@Args('id') id: string) {
+
+        return await this.machineryService.deleteMaintenance(id)
+    
+    }
+
     @Public()
     @Subscription( () => FullMaintenance, {
         name: 'maintenanceAdded',
@@ -152,6 +159,16 @@ export class MachineryResolver {
     maintenanceStatusUpdated() {
 
         return this.pubSub.asyncIterator('maintenanceStatusUpdated')
+    
+    }
+
+    @Public()
+    @Subscription( () => MachineryMaintenance, {
+        name: 'maintenanceDeleted',
+    } )
+    maintenanceDeleted() {
+
+        return this.pubSub.asyncIterator('maintenanceDeleted')
     
     }
 
@@ -236,9 +253,6 @@ export class MachineryResolver {
 
     @Query( () => Ok)
     async sendJobRegistryByEmail(@Args('file') file: string, @Args('folio') folio: string, @Args( { name: 'receivers', type: () => [ String ] } ) receivers: string[] ) {
-
-        // eslint-disable-next-line no-console
-        console.log('paso')
 
         return await this.machineryService.sendJobRegistryByEmail(file, folio, receivers)
     
