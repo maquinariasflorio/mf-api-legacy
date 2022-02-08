@@ -10,7 +10,6 @@ import { MachineryJobRegistry } from '../machinery/machineryJobRegistry.schema'
 import { UserService } from '../user/user.service'
 import { PayStatesFilter } from './inputs/payStatesFilter.input'
 import { DailyReport } from './results/daily.result'
-import { DailyPayStateReport } from './results/dailyPayStateReport.result'
 import { GeneralPayStateMachinery, GeneralPayStateReport, GeneralPayStateTruck } from './results/generalPayStateReport.result'
 
 @Injectable()
