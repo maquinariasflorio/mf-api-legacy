@@ -3,6 +3,7 @@ FROM node:16-alpine3.12 As development
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+COPY yarn.lock ./
 
 RUN yarn install --production=false
 
@@ -18,6 +19,7 @@ ENV NODE_ENV=${NODE_ENV}
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+COPY yarn.lock ./
 
 RUN yarn install --production=true
 
