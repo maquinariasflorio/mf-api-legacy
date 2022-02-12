@@ -697,9 +697,9 @@ export class MachineryService {
         
     }
 
-    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>) {
+    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>, sort: Record<string, unknown> = { date: -1 } ) {
         
-        const jobs = await this.machineryJobRegistryModel.find(conditions).sort( { date: -1 } ).lean()
+        const jobs = await this.machineryJobRegistryModel.find(conditions).sort(sort).lean()
 
         const bookingCache = {}
         
