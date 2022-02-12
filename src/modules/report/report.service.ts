@@ -276,7 +276,7 @@ export class ReportService {
         else if (filters.equipment)
             conditions['equipment.name'] = filters.equipment
         
-        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry(conditions)
+        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry(conditions, { date: 1 } )
 
         return await this.payStateRecordsGenerator(jobRegistries, filters)
     
