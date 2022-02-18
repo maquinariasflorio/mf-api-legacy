@@ -50,8 +50,8 @@ export class TruckResume {
     @Field( () => String, { nullable: true } )
     load?: string;
 
-    @Field( () => Number)
-    totalTravels: number;
+    @Field( () => Number, { nullable: true } )
+    totalTravels?: number;
 
     @Field( () => String)
     workingDayType: string;
