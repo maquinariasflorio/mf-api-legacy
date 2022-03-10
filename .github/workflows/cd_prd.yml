@@ -24,7 +24,7 @@ jobs:
           credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
       # Setup gcloud CLI
-      - uses: google-github-actions/setup-gcloud@master
+      - uses: google-github-actions/setup-gcloud@v0
 
       # Build docker image
       - name: Build Docker Image
@@ -60,7 +60,7 @@ jobs:
         run: echo "BRANCH_NAME=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
       - name: Deploy to Cloud Run
-        uses: "google-github-actions/deploy-cloudrun@main"
+        uses: "google-github-actions/deploy-cloudrun@v0"
         with:
           image: us.gcr.io/${{ secrets.PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
           service: ${{ secrets.SERVICE_NAME }}-${{ env.BRANCH_NAME }}
