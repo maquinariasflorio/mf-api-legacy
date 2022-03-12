@@ -644,11 +644,17 @@ export class MachineryService {
     private addEquipmentToMaintenances(maintenances: MachineryMaintenance[], equipments: Machinery[] ) {
             
         return maintenances.reduce( (acc, maintenance) => {
+
+            const equipment = equipments.find( (equipment) => equipment._id.toString() === maintenance.equipment.toString() )
         
-            acc.push( {
-                ...maintenance,
-                equipment: equipments.find(equipment => equipment._id.toString() === maintenance.equipment.toString() ),
-            } )
+            if (equipment) {
+
+                acc.push( {
+                    ...maintenance,
+                    equipment,
+                } )
+            
+            }
         
             return acc
             
