@@ -352,7 +352,7 @@ type TruckResume {
   building: String!
   address: String!
   load: String
-  totalTravels: Float!
+  totalTravels: Float
   workingDayType: String!
   observations: String!
 }
