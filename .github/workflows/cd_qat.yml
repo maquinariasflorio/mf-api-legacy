@@ -59,14 +59,3 @@ jobs:
           image: us.gcr.io/${{ secrets.PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
           service: ${{ secrets.SERVICE_NAME }}-${{ env.BRANCH_NAME }}
           region: ${{ secrets.SERVICE_REGION }}
-          env_vars: |
-            NODE_ENV=${{ env.NODE_ENV }},
-            MONGO_URI=${{ secrets.MONGO_URI }},
-            JWT_TOKEN_SECRET=${{ secrets.JWT_TOKEN_SECRET }},
-            JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS=${{ secrets.JWT_ACCESS_TOKEN_EXPIRATION_TIME_IN_HOURS }},
-            JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS }},
-            CHANGE_PASSWORD_TOKEN_EXPIRATION_TIME_IN_HOURS=${{ secrets.CHANGE_PASSWORD_TOKEN_EXPIRATION_TIME_IN_HOURS }},
-            SMTP_HOST=${{ secrets.SMTP_HOST }},
-            SMTP_PORT=${{ secrets.SMTP_PORT }},
-            SMTP_USER=${{ secrets.SMTP_USER }},
-            SMTP_USER_PASS=${{ secrets.SMTP_USER_PASS }}
