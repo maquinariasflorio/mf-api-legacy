@@ -291,7 +291,7 @@ export class ReportService {
         
         jobRegistries.forEach( (item) => {
 
-            const equipment = !item.equipment._id ? item.equipment : item.equipment._id.toString()
+            const equipment = !item.equipment._id ? item.equipment.name : item.equipment._id.toString()
             const date = item.date.toISOString().split('T')[0]
             const truckWorkCondition = item.bookingWorkCondition === AllowedWorkCondition.BOTH ? item.workCondition : item.bookingWorkCondition
 
