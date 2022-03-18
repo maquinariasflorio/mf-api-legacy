@@ -365,89 +365,87 @@ export class ReportService {
 
         for (const jobs of Object.values(groupedJobRegistries.TRUCK) ) {
 
-            for (const job of jobs as MachineryJobRegistry[] ) {
+            const job = jobs[0]
 
-                const isInternal = job.equipment._id ? true : false
+            const isInternal = job.equipment._id ? true : false
 
-                // geting booking for jobRegistry
+            // geting booking for jobRegistry
 
-                const { booking } = await this.getBookingForJobRegistry( {
-                    client: filters.client,
-                    job,
-                    isInternal,
-                } )
+            const { booking } = await this.getBookingForJobRegistry( {
+                client: filters.client,
+                job,
+                isInternal,
+            } )
 
-                const bookingMachine = booking ? booking.machines.find( (machine) => {
+            const bookingMachine = booking ? booking.machines.find( (machine) => {
 
-                    const equipment = isInternal ? job.equipment._id.toString() : job.equipment.name
-                    const workCondition = job.bookingWorkCondition === AllowedWorkCondition.BOTH ? job.workCondition : job.bookingWorkCondition
-        
-                    return machine.equipment.toString() === equipment && workCondition === machine.workCondition && (workCondition === AllowedWorkCondition.TRAVEL ? machine.load === job.load : true)
-        
-                } ) : null
-
-                const volume = isInternal ? (job.equipment.volume || 0) : (bookingMachine.volume || 0)
-
-                // calculating use
-
+                const equipment = isInternal ? job.equipment._id.toString() : job.equipment.name
                 const workCondition = job.bookingWorkCondition === AllowedWorkCondition.BOTH ? job.workCondition : job.bookingWorkCondition
+    
+                return machine.equipment.toString() === equipment && workCondition === machine.workCondition && (workCondition === AllowedWorkCondition.TRAVEL ? machine.load === job.load : true)
+    
+            } ) : null
 
-                if (workCondition === AllowedWorkCondition.DAY) {
+            const volume = isInternal ? (job.equipment.volume || 0) : (bookingMachine.volume || 0)
 
-                    for (const item of jobs as MachineryJobRegistry[] ) {
+            // calculating use
 
-                        const amountPerDay = bookingMachine.amountPerDay || 0
+            const workCondition = job.bookingWorkCondition === AllowedWorkCondition.BOTH ? job.workCondition : job.bookingWorkCondition
 
-                        const record = ( {
-                            client         : item.client,
-                            date           : item.date,
-                            building       : item.building,
-                            operator       : item.operator,
-                            equipment      : item.equipment,
-                            amountPerUse   : amountPerDay,
-                            load           : item.load,
-                            totalTravels   : 0,
-                            volume         : volume,
-                            workingDayType : item.workingDayType === 'FULL' ? 'COMPLETA' : (item.workingDayType === 'HALF' ? 'MEDIA' : ''),
-                            totalAmount    : item.workingDayType === 'FULL' ? amountPerDay : (item.workingDayType === 'HALF' ? (amountPerDay / 2) : 0),
-                            workCondition,
-                            folio          : item.folio.toString(),
-                            amounType      : 'por Jornada',
-                        } as GeneralPayStateTruck)
+            if (workCondition === AllowedWorkCondition.DAY) {
 
-                        result[isInternal ? 'intern' : 'extern'].TRUCK.push(record)
-                
-                    }
-            
-                }
-                else if (workCondition === AllowedWorkCondition.TRAVEL) {
+                for (const item of jobs as MachineryJobRegistry[] ) {
 
-                    const amountPerTravel = bookingMachine ? bookingMachine.amountPerTravel : 0
-                    const travels = (jobs as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalTravels || 0), 0)
-                    const folio = (jobs as MachineryJobRegistry[] ).slice(1, (jobs as MachineryJobRegistry[] ).length).reduce( (acc, item) => item.folio ? `${acc}, ${item.folio}` : acc, jobs[0].folio || '')
+                    const amountPerDay = bookingMachine.amountPerDay || 0
 
                     const record = ( {
-                        client         : job.client,
-                        date           : job.date,
-                        building       : job.building,
-                        operator       : job.operator,
-                        equipment      : job.equipment,
-                        amountPerUse   : amountPerTravel,
-                        load           : job.load,
-                        totalTravels   : travels,
+                        client         : item.client,
+                        date           : item.date,
+                        building       : item.building,
+                        operator       : item.operator,
+                        equipment      : item.equipment,
+                        amountPerUse   : amountPerDay,
+                        load           : item.load,
+                        totalTravels   : 0,
                         volume         : volume,
-                        origin         : job.origin,
-                        workingDayType : '',
-                        totalAmount    : travels * amountPerTravel * volume,
+                        workingDayType : item.workingDayType === 'FULL' ? 'COMPLETA' : (item.workingDayType === 'HALF' ? 'MEDIA' : ''),
+                        totalAmount    : item.workingDayType === 'FULL' ? amountPerDay : (item.workingDayType === 'HALF' ? (amountPerDay / 2) : 0),
                         workCondition,
-                        folio,
-                        amounType      : 'por Viaje',
+                        folio          : item.folio.toString(),
+                        amounType      : 'por Jornada',
                     } as GeneralPayStateTruck)
 
                     result[isInternal ? 'intern' : 'extern'].TRUCK.push(record)
             
                 }
-            
+        
+            }
+            else if (workCondition === AllowedWorkCondition.TRAVEL) {
+
+                const amountPerTravel = bookingMachine ? bookingMachine.amountPerTravel : 0
+                const travels = (jobs as MachineryJobRegistry[] ).reduce( (acc, item) => acc + (item.totalTravels || 0), 0)
+                const folio = (jobs as MachineryJobRegistry[] ).slice(1, (jobs as MachineryJobRegistry[] ).length).reduce( (acc, item) => item.folio ? `${acc}, ${item.folio}` : acc, jobs[0].folio || '')
+
+                const record = ( {
+                    client         : job.client,
+                    date           : job.date,
+                    building       : job.building,
+                    operator       : job.operator,
+                    equipment      : job.equipment,
+                    amountPerUse   : amountPerTravel,
+                    load           : job.load,
+                    totalTravels   : travels,
+                    volume         : volume,
+                    origin         : job.origin,
+                    workingDayType : '',
+                    totalAmount    : travels * amountPerTravel * volume,
+                    workCondition,
+                    folio,
+                    amounType      : 'por Viaje',
+                } as GeneralPayStateTruck)
+
+                result[isInternal ? 'intern' : 'extern'].TRUCK.push(record)
+        
             }
         
         }
