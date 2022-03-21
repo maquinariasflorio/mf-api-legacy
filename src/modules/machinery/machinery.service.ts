@@ -831,7 +831,9 @@ export class MachineryService {
 
     async sendJobRegistryByEmail(file, folio, receivers) {
 
-        await this.mailerService.sendMail( {
+        console.log(receivers)
+
+        return await this.mailerService.sendMail( {
             to          : receivers,
             from        : `"No Reply" <${process.env.SMTP_USER}>`,
             subject     : 'Maquinarias Florio - Nuevo registro de uso',
@@ -843,9 +845,9 @@ export class MachineryService {
                     path     : 'data:application/pdf;base64,' + file,
                 },
             ],
-        } )
-
-        return new Ok()
+        } ).then(() => {
+            return new Ok()
+        })
     
     }
 
