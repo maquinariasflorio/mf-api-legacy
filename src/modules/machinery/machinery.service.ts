@@ -319,9 +319,13 @@ export class MachineryService {
 
             const newDocument = await newJobRegistry.save()
 
-            this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
-                ...newDocument.toObject(),
-            } } )
+            if (newMachineryJobRegistry.date.substring(0, 10) === new Date().toISOString().substring(0, 10) ) {
+
+                this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
+                    ...newDocument.toObject(),
+                } } )
+
+            }
 
             const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
                 $inc: {
