@@ -27,6 +27,12 @@ export class MachineryResume {
     @Field( () => String)
     observations: string;
 
+    @Field( () => String, { nullable: true } )
+    client: string;
+
+    @Field( () => Number, { nullable: true } )
+    folio: number;
+
 }
 
 @ObjectType()
@@ -58,6 +64,12 @@ export class TruckResume {
 
     @Field( () => String)
     observations: string;
+
+    @Field( () => String, { nullable: true } )
+    client: string;
+
+    @Field( () => Number, { nullable: true } )
+    folio: number;
 
 }
 
