@@ -343,6 +343,8 @@ type MachineryResume {
   endHourmeter: Float!
   totalHours: Float!
   observations: String!
+  client: String
+  folio: Float
 }
 
 type TruckResume {
@@ -355,6 +357,8 @@ type TruckResume {
   totalTravels: Float
   workingDayType: String!
   observations: String!
+  client: String
+  folio: Float
 }
 
 type DailyEquipmentsResume {

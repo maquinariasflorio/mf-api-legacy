@@ -28,7 +28,7 @@ export class ReportService {
 
         // buildings of the day
 
-        const bookings = await this.bookingService.getBookingsByDate(date)
+        const bookings = await this.bookingService.getBookingsByDate(date, true)
 
         function getMachineBooking(equipment: string, type: string) {
 
@@ -88,6 +88,8 @@ export class ReportService {
                     endHourmeter   : jobRegistry.endHourmeter,
                     totalHours     : jobRegistry.totalHours,
                     observations   : jobRegistry.observations || '',
+                    client         : jobRegistry.client.name,
+                    folio          : jobRegistry.folio,
                 }
             
             } ),
@@ -105,6 +107,8 @@ export class ReportService {
                     endHourmeter   : 0,
                     totalHours     : 0,
                     observations   : '',
+                    client         : booking ? booking.client.name : '',
+                    folio          : 0,
                 }
             
             } ),
@@ -143,6 +147,8 @@ export class ReportService {
                     totalTravels   : jobRegistry.totalTravels,
                     workingDayType : jobRegistry.workingDayType ? (jobRegistry.workingDayType === 'FULL' ? 'COMPLETA' : 'MEDIA') : '',
                     observations   : jobRegistry.observations || '',
+                    client         : jobRegistry.client.name,
+                    folio          : jobRegistry.folio,
                 }
             
             } ),
@@ -161,6 +167,8 @@ export class ReportService {
                     totalTravels   : 0,
                     workingDayType : '',
                     observations   : '',
+                    client         : booking ? booking.client.name : '',
+                    folio          : 0,
                 }
             
             } ),
@@ -199,6 +207,8 @@ export class ReportService {
                     endHourmeter   : jobRegistry.endHourmeter || 0,
                     totalHours     : jobRegistry.totalHours || 0,
                     observations   : jobRegistry.observations || '',
+                    client         : jobRegistry.client.name,
+                    folio          : jobRegistry.folio,
                 }
             
             } ),
@@ -229,6 +239,8 @@ export class ReportService {
                     totalTravels   : jobRegistry.totalTravels || 0,
                     workingDayType : jobRegistry.workingDayType ? (jobRegistry.workingDayType === 'FULL' ? 'COMPLETA' : 'MEDIA') : '',
                     observations   : jobRegistry.observations || '',
+                    client         : jobRegistry.client.name,
+                    folio          : jobRegistry.folio,
                 }
             
             } ),
