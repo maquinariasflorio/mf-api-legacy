@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
 import { ObjectId } from 'mongodb'
-import { MailerService } from '@nestjs-modules/mailer'
 import { compareSync } from 'bcrypt'
 import { MfError } from '../../commons/mfError'
 import { AuthError } from './error.cv'
@@ -18,12 +17,12 @@ import { RoleService } from '../role/role.service'
 import { RoleNotFound } from '../role/results/roleNotFound.result'
 import { ViewService } from '../view/view.service'
 import { WrongCurrentPassword } from './results/wrongCurrentPassword.result'
+import { sendMail } from '../mailer/mailer'
 
 @Injectable()
 export class AuthService {
 
     constructor(
-        private readonly mailerService: MailerService,
         private readonly userService: UserService,
         private readonly tokenService: TokenService,
         private readonly roleService: RoleService,
@@ -105,7 +104,7 @@ export class AuthService {
 
         const token = await this.tokenService.generateChangePasswordToken( { userId: user._id } )
 
-        return await this.mailerService.sendMail( {
+        return await sendMail( {
             to      : user.email.toLowerCase(),
             from    : `"No Reply" <${process.env.SMTP_USER}>`,
             subject : 'Maquinarias Florio - Código de autorización para cambio de contraseña',
@@ -162,7 +161,7 @@ export class AuthService {
 
         await this.userService.changePassword( { userId: user._id, password: form.password } )
 
-        return await this.mailerService.sendMail( {
+        return await sendMail( {
             to      : user.email.toLowerCase(),
             from    : `"No Reply" <${process.env.SMTP_USER}>`,
             subject : 'Maquinarias Florio - Cambio de contraseña',
