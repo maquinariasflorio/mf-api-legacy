@@ -8,8 +8,6 @@ import { ConfigModule } from '@nestjs/config'
 import { GraphQLModule } from '@nestjs/graphql'
 import { MongooseModule } from '@nestjs/mongoose'
 import { MONGO_URI, MONGO_OPTIONS } from '../mongo.config'
-import { MailerModule } from '@nestjs-modules/mailer'
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 
 import { JwtAuthGuard } from './modules/auth/jwt_auth.guard'
 
@@ -40,9 +38,10 @@ import { ReportModule } from './modules/report/report.module'
                 JWT_REFRESH_TOKEN_EXPIRATION_TIME_IN_HOURS     : Joi.number().required(),
                 CHANGE_PASSWORD_TOKEN_EXPIRATION_TIME_IN_HOURS : Joi.number().required(),
                 SMTP_USER                                      : Joi.string().required(),
-                SMTP_USER_PASS                                 : Joi.string().required(),
-                SMTP_HOST                                      : Joi.string().required(),
-                SMTP_PORT                                      : Joi.number().required(),
+                SMTP_CLIENT_ID                                 : Joi.string().required(),
+                SMTP_CLIENT_SECRET                             : Joi.string().required(),
+                SMTP_REDIRECT_URI                              : Joi.string().required(),
+                SMTP_REFRESH_TOKEN                             : Joi.string().required(),
             } ),
 
             isGlobal: true,
@@ -68,35 +67,6 @@ import { ReportModule } from './modules/report/report.module'
         } ),
 
         MongooseModule.forRoot(MONGO_URI, MONGO_OPTIONS),
-
-        MailerModule.forRoot( {
-            transport: {
-                host       : process.env.SMTP_HOST,
-                port       : Number(process.env.SMTP_PORT),
-                ignoreTLS  : false,
-                requireTLS : true,
-                secure     : true,
-                auth       : {
-                    user : process.env.SMTP_USER,
-                    pass : process.env.SMTP_USER_PASS,
-                },
-
-                tls: { rejectUnauthorized: false },
-            },
-
-            defaults: {
-                from: `"no-reply" <${process.env.SMTP_USER}>`,
-            },
-
-            preview  : false,
-            template : {
-                dir     : process.cwd() + '/src/templates/',
-                adapter : new HandlebarsAdapter(),
-                options : {
-                    strict: true,
-                },
-            },
-        } ),
 
         AuthModule,
         TokenModule,

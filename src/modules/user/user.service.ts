@@ -3,7 +3,6 @@ import { ObjectId } from 'mongodb'
 import { compareSync, hashSync } from 'bcrypt'
 import { InjectConnection, InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { MailerService } from '@nestjs-modules/mailer'
 import { Ok } from 'src/commons/results/ok.result'
 import * as mongoose from 'mongoose'
 import { UserNotFound } from './results/userNotFound.result'
@@ -13,6 +12,7 @@ import { ImmutableUser } from './results/immutableUser.result'
 import { UserAlreadyExists } from './results/userAlreadyExists.result'
 import { User, UserDocument } from './user.schema'
 import { UserInput } from './inputs/user.input'
+import { sendMail } from '../mailer/mailer'
 
 @Injectable()
 export class UserService {
@@ -22,7 +22,6 @@ export class UserService {
         private userModel: Model<UserDocument>,
         @InjectConnection()
         private readonly connection: mongoose.Connection,
-        private readonly mailerService: MailerService,
     ) {}
 
     async findUser(conditions?: Record<string, unknown>) {
@@ -126,7 +125,7 @@ export class UserService {
 
             await newUser.save()
         
-            return await this.mailerService.sendMail( {
+            return await sendMail( {
                 to      : user.email.toLowerCase(),
                 from    : `"No Reply" <${process.env.SMTP_USER}>`,
                 subject : 'Maquinarias Florio - Usuario creado',
