@@ -266,7 +266,7 @@ export class BookingService {
     
     }
 
-    async getBookingsByDate(date: string) {
+    async getBookingsByDate(date: string, getClient = false) {
 
         const bookings = await this.findBooking( {
             startDate : { $lte: new Date(date) },
@@ -275,6 +275,7 @@ export class BookingService {
 
         const equipmentsCache = {}
         const operatorsCache = {}
+        const clientsCache = {}
 
         for (const booking of bookings) {
 
@@ -302,6 +303,18 @@ export class BookingService {
                     }
                 
                 }
+            
+            }
+
+            if (getClient) {
+
+                const client = clientsCache[booking.client.toString()]
+                    ? clientsCache[booking.client.toString()]
+                    : await this.clientService.findOneClient( { _id: booking.client } )
+
+                clientsCache[booking.client.toString()] = client
+
+                booking.client = client
             
             }
         
