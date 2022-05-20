@@ -66,7 +66,7 @@ export class ReportService {
 
             "machineryType": 'OTHER',
         } )
-        const internalMachineryJobRegistriesMachinesIds = internalMachineryJobRegistries.map( (jobRegistry) => new ObjectId(jobRegistry.equipment._id) )
+        const internalMachineryJobRegistriesMachinesIds = internalMachineryJobRegistries.results.map( (jobRegistry) => new ObjectId(jobRegistry.equipment._id) )
 
         const restOfMachines = await this.machineryService.findEquipment( {
             type : 'OTHER',
@@ -77,7 +77,7 @@ export class ReportService {
         
         const internalMachinesUnion = [
 
-            ...internalMachineryJobRegistries.map( (jobRegistry) => {
+            ...internalMachineryJobRegistries.results.map( (jobRegistry) => {
 
                 return {
                     equipment      : jobRegistry.equipment.code,
@@ -124,7 +124,7 @@ export class ReportService {
 
             "machineryType": 'TRUCK',
         } )
-        const internalTruckJobRegistriesMachinesIds = internalTruckJobRegistries.map( (jobRegistry) => new ObjectId(jobRegistry.equipment._id) )
+        const internalTruckJobRegistriesMachinesIds = internalTruckJobRegistries.results.map( (jobRegistry) => new ObjectId(jobRegistry.equipment._id) )
 
         const restOfTruckMachines = await this.machineryService.findEquipment( {
             type : 'TRUCK',
@@ -135,7 +135,7 @@ export class ReportService {
 
         const internalTrucksUnion = [
 
-            ...internalTruckJobRegistries.map( (jobRegistry) => {
+            ...internalTruckJobRegistries.results.map( (jobRegistry) => {
 
                 return {
                     equipment      : jobRegistry.equipment.code,
@@ -196,7 +196,7 @@ export class ReportService {
         
         const externalMachinesUnion = [
 
-            ...externalMachineryJobRegistries.map( (jobRegistry) => {
+            ...externalMachineryJobRegistries.results.map( (jobRegistry) => {
 
                 return {
                     equipment      : jobRegistry.equipment.name,
@@ -227,7 +227,7 @@ export class ReportService {
 
         const externalTrucksUnion = [
 
-            ...externalTruckJobRegistries.map( (jobRegistry) => {
+            ...externalTruckJobRegistries.results.map( (jobRegistry) => {
 
                 return {
                     equipment      : jobRegistry.equipment.name,
@@ -288,7 +288,7 @@ export class ReportService {
         else if (filters.equipment)
             conditions['equipment.name'] = filters.equipment
         
-        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry(conditions, { date: 1 } )
+        const jobRegistries = await this.machineryService.getAllMachineryJobRegistry(conditions, null, { date: 1 } )
 
         return await this.payStateRecordsGenerator(jobRegistries, filters)
     

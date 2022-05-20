@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config'
 import { GraphQLModule } from '@nestjs/graphql'
 import { MongooseModule } from '@nestjs/mongoose'
 import { MONGO_URI, MONGO_OPTIONS } from '../mongo.config'
+import { mongoosePlugin as paginatePlugin } from 'mongo-cursor-pagination'
 
 import { JwtAuthGuard } from './modules/auth/jwt_auth.guard'
 
@@ -66,7 +67,16 @@ import { ReportModule } from './modules/report/report.module'
             },
         } ),
 
-        MongooseModule.forRoot(MONGO_URI, MONGO_OPTIONS),
+        MongooseModule.forRoot(MONGO_URI, {
+            ...MONGO_OPTIONS,
+            connectionFactory: (connection) => {
+
+                connection.plugin(paginatePlugin)
+
+                return connection
+            
+            },
+        } ),
 
         AuthModule,
         TokenModule,

@@ -1,4 +1,5 @@
 import { ObjectType, Field, createUnionType } from '@nestjs/graphql'
+import { PaginationResult } from 'src/commons/results/pagination.result'
 import { AllowedWorkCondition } from 'src/modules/booking/booking.schema'
 import { Client } from 'src/modules/client/client.schema'
 import { AllowedMachineryType, Machinery } from 'src/modules/machinery/machinery.schema'
@@ -56,7 +57,7 @@ export const Operator = createUnionType( {
 } )
 
 @ObjectType()
-export class FullMachineryJobRegistry {
+export class FullMachineryJobRegistryResult {
     
     @Field( () => String)
     _id: string;
@@ -121,4 +122,12 @@ export class FullMachineryJobRegistry {
     @Field( () => String)
     address: string;
 
+}
+
+@ObjectType()
+export class FullMachineryJobRegistry extends PaginationResult {
+    
+    @Field( () => [ FullMachineryJobRegistryResult ] )
+    results: FullMachineryJobRegistryResult[];
+    
 }
