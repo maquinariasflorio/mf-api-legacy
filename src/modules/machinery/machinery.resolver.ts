@@ -18,7 +18,7 @@ import { Public } from '../auth/public.decorator'
 import { Inject } from '@nestjs/common'
 import { PubSubEngine } from 'graphql-subscriptions'
 import { FullMaintenance } from './results/fullMaintenance.result'
-import { FullMachineryJobRegistry } from './results/fullMachineryJobRegistry.result'
+import { FullMachineryJobRegistry, FullMachineryJobRegistryResult } from './results/fullMachineryJobRegistry.result'
 import { UpdateMachineryJobRegistryInput } from './inputs/updateMachineryJobRegistry.input'
 import { UpdateMachineryJobRegistryResultUnion } from './outputs/updateMachineryJobRegistry.output'
 import { DeleteMachineryJobRegistryInput } from './inputs/deleteMachineryJobRegistry.input'
@@ -172,35 +172,35 @@ export class MachineryResolver {
     
     }
 
-    @Query( () => [ FullMachineryJobRegistry ] )
+    @Query( () => FullMachineryJobRegistry)
     async getAllMachineryJobRegistry() {
 
         return await this.machineryService.getAllMachineryJobRegistry()
     
     }
 
-    @Query( () => [ FullMachineryJobRegistry ] )
+    @Query( () => FullMachineryJobRegistry)
     async getAllMachineryJobRegistryByUserAndDate(@Args('user') user: string, @Args('startDate') startDate: string, @Args('endDate') endDate: string) {
 
         return await this.machineryService.getAllMachineryJobRegistryByUserAndDate(user, startDate, endDate)
     
     }
 
-    @Query( () => [ FullMachineryJobRegistry ] )
-    async getAllMachineryJobRegistryByUser(@Args( { nullable: true, name: 'user' } ) user: string) {
+    @Query( () => FullMachineryJobRegistry)
+    async getAllMachineryJobRegistryByUser(@Args( { nullable: true, name: 'user' } ) user: string, @Args( { nullable: true, name: 'next' } ) next: string) {
 
-        return await this.machineryService.getAllMachineryJobRegistryByUser(user)
+        return await this.machineryService.getAllMachineryJobRegistryByUser(user, next)
     
     }
 
-    @Query( () => [ FullMachineryJobRegistry ] )
+    @Query( () => FullMachineryJobRegistry)
     async getAllMachineryJobRegistryByDate(@Args('date') date: string) {
 
         return await this.machineryService.getAllMachineryJobRegistryByDate(date)
     
     }
 
-    @Query( () => [ FullMachineryJobRegistry ] )
+    @Query( () => [ FullMachineryJobRegistryResult ] )
     async getPreviousMachineryJobRegistry(@Args('user') user: string, @Args('date') date: string, @Args('equipment') equipment: string) {
 
         return await this.machineryService.getPreviousMachineryJobRegistry(user, date, equipment)
@@ -222,7 +222,7 @@ export class MachineryResolver {
     }
 
     @Public()
-    @Subscription( () => FullMachineryJobRegistry, {
+    @Subscription( () => FullMachineryJobRegistryResult, {
         name: 'jobRegistryAdded',
     } )
     jobRegistryAdded() {
@@ -242,7 +242,7 @@ export class MachineryResolver {
     }
 
     @Public()
-    @Subscription( () => FullMachineryJobRegistry, {
+    @Subscription( () => FullMachineryJobRegistryResult, {
         name: 'jobRegistryUpdated',
     } )
     jobRegistryUpdated() {
@@ -258,7 +258,7 @@ export class MachineryResolver {
     
     }
 
-    @Query( () => [ FullMachineryJobRegistry ] )
+    @Query( () => FullMachineryJobRegistry)
     async getJobRegistryById(@Args('id') id: string) {
 
         return await this.machineryService.getJobRegistryById(id)

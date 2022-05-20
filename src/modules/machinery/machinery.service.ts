@@ -31,6 +31,7 @@ import { AllowedWorkCondition } from '../booking/booking.schema'
 import { DeleteMachineryFuelRegistryInput } from './inputs/deleteMachineryFuelRegistry.input'
 import { MachineryFuelRegistryNotFound } from './results/machineryFuelRegistryNotFound.result'
 import { sendMail } from '../mailer/mailer'
+import { nullFormat } from 'numeral'
 
 @Injectable()
 export class MachineryService {
@@ -318,14 +319,6 @@ export class MachineryService {
 
             const newDocument = await newJobRegistry.save()
 
-            if (newMachineryJobRegistry.date.substring(0, 10) === new Date().toISOString().substring(0, 10) ) {
-
-                this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
-                    ...newDocument.toObject(),
-                } } )
-
-            }
-
             const { lastFolio } = await this.counterService.findOneAndUpdate('jobRegistryFolio', {
                 $inc: {
                     lastFolio: 1,
@@ -337,6 +330,11 @@ export class MachineryService {
                     folio: lastFolio,
                 },
             } )
+
+            this.pubSub.publish('jobRegistryAdded', { jobRegistryAdded: {
+                ...newDocument.toObject(),
+                folio: lastFolio,
+            } } )
 
             if (isValidObjectId(machineryJobRegistry.equipment) ) {
 
@@ -706,13 +704,23 @@ export class MachineryService {
         
     }
 
-    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>, sort: Record<string, unknown> = { date: -1 } ) {
+    async getAllMachineryJobRegistry(conditions?: Record<string, unknown>, pagination?: Record<string, unknown>, sort: Record<string, unknown> = { date: -1 } ) {
         
-        const jobs = await this.machineryJobRegistryModel.find(conditions).sort(sort).allowDiskUse(true).lean()
+        let paginationInfo = {
+            results : [],
+            next    : null,
+            hasNext : false,
+        }
+
+        if (pagination == null)
+            paginationInfo.results = await this.machineryJobRegistryModel.find(conditions).sort(sort).allowDiskUse(true).lean()
+        else
+            paginationInfo = await (this.machineryJobRegistryModel as any).paginate( { query: conditions, limit: 30, paginatedField: 'folio', sortAscending: false, next: pagination?.next } )
+        
 
         const bookingCache = {}
         
-        for (const job of jobs) {
+        for (const job of paginationInfo.results) {
 
             // is external
             if (!job.equipment._id) {
@@ -733,7 +741,7 @@ export class MachineryService {
         
         }
 
-        return jobs
+        return paginationInfo
     
     }
 
@@ -752,7 +760,7 @@ export class MachineryService {
     
     }
 
-    async getAllMachineryJobRegistryByUser(userId: string) {
+    async getAllMachineryJobRegistryByUser(userId: string, next: string) {
 
         const conditions = {
             "executor._id": new ObjectId(userId),
@@ -761,7 +769,9 @@ export class MachineryService {
         if (!userId)
             delete conditions["executor._id"]
 
-        return await this.getAllMachineryJobRegistry(conditions)
+        return await this.getAllMachineryJobRegistry(conditions, {
+            next,
+        } )
     
     }
 
@@ -837,31 +847,21 @@ export class MachineryService {
         // eslint-disable-next-line no-console
         console.log('MAIL RECEIVERS:', receivers)
 
-        try {
+        await sendMail( {
+            to          : receivers,
+            from        : `"No Reply" <${process.env.SMTP_USER}>`,
+            subject     : 'Maquinarias Florio - Nuevo registro de uso',
+            text        : `Se registró un nuevo uso de maquinaria con el folio: ${folio}`,
+            html        : `<p>Se registró un nuevo uso de maquinaria con el folio: ${folio}</p>`,
+            attachments : [
+                {
+                    filename : `reporte_equipo_folio_${folio}.pdf`,
+                    path     : 'data:application/pdf;base64,' + file,
+                },
+            ],
+        } )
 
-            await sendMail( {
-                to          : receivers,
-                from        : `"No Reply" <${process.env.SMTP_USER}>`,
-                subject     : 'Maquinarias Florio - Nuevo registro de uso',
-                text        : `Se registró un nuevo uso de maquinaria con el folio: ${folio}`,
-                html        : `<p>Se registró un nuevo uso de maquinaria con el folio: ${folio}</p>`,
-                attachments : [
-                    {
-                        filename : `reporte_equipo_folio_${folio}.pdf`,
-                        path     : 'data:application/pdf;base64,' + file,
-                    },
-                ],
-            } )
-
-            return new Ok()
-        
-        }
-        catch (err) {
-
-            console.error(err.message, err.stack)
-            throw new Error(err.message)
-        
-        }
+        return new Ok()
     
     }
 

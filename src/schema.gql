@@ -180,7 +180,7 @@ type FullMaintenance {
   status: MaintenanceStatus
 }
 
-type FullMachineryJobRegistry {
+type FullMachineryJobRegistryResult {
   _id: String!
   executor: User!
   equipment: Equipment!
@@ -240,6 +240,14 @@ type InternalOperator {
   role: String!
   isSystemAdmin: Boolean!
   signature: String
+}
+
+type FullMachineryJobRegistry {
+  next: String!
+  hasNext: Boolean!
+  previous: String
+  hasPrevious: Boolean
+  results: [FullMachineryJobRegistryResult!]!
 }
 
 type FullMachineryFuelRegistry {
@@ -427,14 +435,14 @@ type Query {
   getAllPreviousFuelRegistries(equipments: [String!]!): [FullMachineryFuelRegistry!]!
   getAllLastMaintenance: [FullMaintenance!]!
   getMaintenancePage(lastUid: Float!, equipment: String!): [FullMaintenance!]!
-  getAllMachineryJobRegistry: [FullMachineryJobRegistry!]!
-  getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): [FullMachineryJobRegistry!]!
-  getAllMachineryJobRegistryByUser(user: String): [FullMachineryJobRegistry!]!
-  getAllMachineryJobRegistryByDate(date: String!): [FullMachineryJobRegistry!]!
-  getPreviousMachineryJobRegistry(equipment: String!, date: String!, user: String!): [FullMachineryJobRegistry!]!
+  getAllMachineryJobRegistry: FullMachineryJobRegistry!
+  getAllMachineryJobRegistryByUserAndDate(endDate: String!, startDate: String!, user: String!): FullMachineryJobRegistry!
+  getAllMachineryJobRegistryByUser(next: String, user: String): FullMachineryJobRegistry!
+  getAllMachineryJobRegistryByDate(date: String!): FullMachineryJobRegistry!
+  getPreviousMachineryJobRegistry(equipment: String!, date: String!, user: String!): [FullMachineryJobRegistryResult!]!
   getAllMachineryFuelRegistryByUser(user: String): [FullMachineryFuelRegistry!]!
   sendJobRegistryByEmail(receivers: [String!]!, folio: String!, file: String!): Ok!
-  getJobRegistryById(id: String!): [FullMachineryJobRegistry!]!
+  getJobRegistryById(id: String!): FullMachineryJobRegistry!
   getAllBookings: [Booking!]!
   getBuildingsByClientAndDate(equipment: String!, date: String!, client: String!): [Booking!]!
   getBookingByClientDateEquipmentBuilding(building: String!, equipment: String!, date: String!, client: String!): [Booking!]!
@@ -808,7 +816,7 @@ type Subscription {
   maintenanceAdded: FullMaintenance!
   maintenanceStatusUpdated: MachineryMaintenance!
   maintenanceDeleted: MachineryMaintenance!
-  jobRegistryAdded: FullMachineryJobRegistry!
+  jobRegistryAdded: FullMachineryJobRegistryResult!
   jobRegistryDeleted: String!
-  jobRegistryUpdated: FullMachineryJobRegistry!
+  jobRegistryUpdated: FullMachineryJobRegistryResult!
 }
